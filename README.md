@@ -1,73 +1,52 @@
-# React + TypeScript + Vite
+# Narrative
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PWA-приложение для записи русской речи, перевода в реальном времени и озвучки на английском. Всё работает локально в браузере — без серверов и облака.
 
-Currently, two official plugins are available:
+## Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Запись голоса с микрофона
+- Распознавание речи через `vosk-browser` (локально, без отправки данных)
+- Перевод RU → EN через `@huggingface/transformers` в Web Worker
+- Озвучка перевода через браузерный `SpeechSynthesis`
+- Установка как PWA (работает офлайн после первого запуска)
 
-## React Compiler
+## Запуск
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Создайте `.env` по примеру `.env.example`:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
 ```
+
+Скачайте модель Vosk и положите как `public/model.tar.gz`. При необходимости укажите путь в `.env`:
+
+```env
+VITE_VOSK_MODEL_URL=/model.tar.gz
+```
+
+```bash
+npm run dev
+```
+
+Для теста PWA-установки в dev используйте домен `http://narrative.localhost:5173`.
+
+## Сборка
+
+```bash
+npm run build
+npm run preview
+```
+
+## Архитектура
+
+Подробная документация — в [`/docs`](./docs/).
+
+## Важно
+
+Модель Vosk и веса HuggingFace загружаются в браузер при первом запуске. PWA service worker кэширует их, поэтому последующие запуски значительно быстрее.
+
+Перевод выполняется в `src/workers/translate.worker.ts` с моделью `Xenova/opus-mt-ru-en`. Воркер запускается сразу при загрузке страницы и прогревает модель (`warmup`).

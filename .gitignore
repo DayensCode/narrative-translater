@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.claude
+tmp-vosk-download
+dev-dist
