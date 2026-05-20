@@ -9,7 +9,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     allowedHosts: [".localhost"],
-    origin: "http://narrative.localhost:5173",
   },
   preview: {
     host: true,

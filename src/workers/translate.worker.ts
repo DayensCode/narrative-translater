@@ -33,10 +33,6 @@ function filteredWarn(...args: unknown[]) {
   originalConsoleWarn(...args);
 }
 
-async function getTranslator() {
-  throw new Error("Model name is required.");
-}
-
 async function getTranslatorForModel(model: string) {
   const existing = translatorPromises.get(model);
   if (existing) {
@@ -48,7 +44,6 @@ async function getTranslatorForModel(model: string) {
 
     if (env.backends?.onnx?.wasm) {
       env.backends.onnx.wasm.numThreads = 1;
-      env.backends.onnx.wasm.simd = true;
     }
 
     try {
@@ -105,20 +100,20 @@ function getTranslationRoute(
   }
 
   const routes: Record<string, TranslationStage[]> = {
-    "ru:en": [{ model: "Helsinki-NLP/opus-mt-ru-en" }],
-    "ru:es": [{ model: "Helsinki-NLP/opus-mt-ru-es" }],
-    "ru:fr": [{ model: "Helsinki-NLP/opus-mt-ru-fr" }],
+    "ru:en": [{ model: "Xenova/opus-mt-ru-en" }],
+    "ru:es": [{ model: "Xenova/opus-mt-ru-es" }],
+    "ru:fr": [{ model: "Xenova/opus-mt-ru-fr" }],
     "ru:hi": [
-      { model: "Helsinki-NLP/opus-mt-ru-en" },
-      { model: "Helsinki-NLP/opus-mt-en-hi" },
+      { model: "Xenova/opus-mt-ru-en" },
+      { model: "Xenova/opus-mt-en-hi" },
     ],
     "ru:zh": [
-      { model: "Helsinki-NLP/opus-mt-ru-en" },
-      { model: "Helsinki-NLP/opus-mt-en-zh", prefix: ">>cmn_Hans<<" },
+      { model: "Xenova/opus-mt-ru-en" },
+      { model: "Xenova/opus-mt-en-zh", prefix: ">>cmn_Hans<<" },
     ],
     "ru:ar": [
-      { model: "Helsinki-NLP/opus-mt-ru-en" },
-      { model: "Helsinki-NLP/opus-mt-en-ar", prefix: ">>ara<<" },
+      { model: "Xenova/opus-mt-ru-en" },
+      { model: "Xenova/opus-mt-en-ar", prefix: ">>ara<<" },
     ],
   };
 
@@ -148,7 +143,7 @@ self.onmessage = async (event: MessageEvent<TranslationRequest>) => {
 
   if (action === "warmup") {
     try {
-      await getTranslatorForModel("Helsinki-NLP/opus-mt-ru-en");
+      await getTranslatorForModel("Xenova/opus-mt-ru-en");
       self.postMessage({
         id,
         action: "warmup",
