@@ -1,29 +1,37 @@
 import { useEffect, useState } from "react";
 
-export type ThemeMode = "system" | "light" | "dark";
-export type ResolvedTheme = Exclude<ThemeMode, "system">;
+export const ThemeMode = {
+  System: "system",
+  Light: "light",
+  Dark: "dark",
+} as const;
+
+export type ThemeMode = (typeof ThemeMode)[keyof typeof ThemeMode];
+export type ResolvedTheme = typeof ThemeMode.Light | typeof ThemeMode.Dark;
 
 const STORAGE_KEY = "narrative-theme";
 
 function getSystemTheme(): ResolvedTheme {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (typeof window === "undefined") return ThemeMode.Light;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? ThemeMode.Dark
+    : ThemeMode.Light;
 }
 
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") return "system";
-    const savedTheme = window.localStorage.getItem(STORAGE_KEY);
-    return savedTheme === "light" || savedTheme === "dark" || savedTheme === "system"
-      ? savedTheme
-      : "system";
+    if (typeof window === "undefined") return ThemeMode.System;
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    return Object.values(ThemeMode).includes(saved as ThemeMode)
+      ? (saved as ThemeMode)
+      : ThemeMode.System;
   });
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => getSystemTheme());
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const updateTheme = () => {
-      setResolvedTheme(theme === "system" ? getSystemTheme() : theme);
+      setResolvedTheme(theme === ThemeMode.System ? getSystemTheme() : theme);
     };
 
     updateTheme();

@@ -1,0 +1,73 @@
+.bottom-controls {
+    position: fixed;
+    left: 50%;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(620px, calc(100vw - 1.2rem));
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0.8rem;
+    border-radius: 1.5rem;
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg-solid), transparent 8%);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+}
+
+.control-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.95rem 1rem;
+    background: transparent;
+    color: var(--text);
+    font-weight: 700;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        background 180ms ease,
+        color 180ms ease;
+}
+
+.primary-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff7f0;
+}
+
+.primary-btn.recording {
+    background: #b83c29;
+    border-color: #b83c29;
+}
+
+.secondary-btn {
+    background: color-mix(in srgb, var(--bg-solid), transparent 14%);
+}
+
+.tertiary-btn {
+    color: var(--text-soft);
+}
+
+.control-btn:hover {
+    transform: translateY(-1px);
+}
+
+.control-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+    .bottom-controls {
+        width: calc(100vw - 1rem);
+        grid-template-columns: 1fr;
+    }
+
+    .control-btn {
+        width: 100%;
+    }
+}

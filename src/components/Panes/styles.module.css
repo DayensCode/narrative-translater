@@ -1,0 +1,119 @@
+.workspace-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.pane {
+    min-height: calc(100vh - 21rem);
+    border-radius: 1.8rem;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg-solid), transparent 8%);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+}
+
+.pane-source {
+    position: relative;
+}
+
+.pane-source::after {
+    content: "";
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1.2rem;
+    background: linear-gradient(160deg, rgba(163, 63, 31, 0.16), transparent);
+    pointer-events: none;
+}
+
+.pane-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.pane-head h2 {
+    margin: 0.3rem 0 0;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    letter-spacing: -0.04em;
+}
+
+.pane-kicker {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    color: var(--text-soft);
+}
+
+.pane-pill {
+    flex-shrink: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.pane-content {
+    margin-top: 1rem;
+}
+
+.pane-content p {
+    margin: 0;
+    font-size: clamp(1.18rem, 2vw, 1.55rem);
+    line-height: 1.65;
+    white-space: pre-wrap;
+}
+
+.pane-foot {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+}
+
+.pane-foot span {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: var(--text-soft);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.pane-foot p,
+.pane-note {
+    margin: 0;
+    color: var(--text-soft);
+}
+
+.pane-note {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.94rem;
+}
+
+@media (max-width: 980px) {
+    .workspace-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pane {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 720px) {
+    .pane {
+        border-radius: 1.35rem;
+    }
+}

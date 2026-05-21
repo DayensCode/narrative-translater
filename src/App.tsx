@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation as useI18nTranslation } from "react-i18next";
-import "./App.css";
+import styles from "./App.module.css";
 import { Controls } from "./components/Controls";
 import { Panes } from "./components/Panes";
+import { SettingsPage } from "./components/SettingsPage";
 import { TopBar } from "./components/TopBar";
+
 import { usePWAInstall } from "./hooks/usePWAInstall";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import { useSpeechSynthesis } from "./hooks/useSpeechSynthesis";
@@ -12,17 +14,22 @@ import { useTranslation } from "./hooks/useTranslation";
 import { i18n, type UiLocale, UI_LOCALES } from "./i18n";
 import {
   getSpeechLocale,
+  getSourceSpeechLocale,
   normalizeUiLocale,
-  RECOGNITION_LANGUAGE,
+  SOURCE_LANGUAGE_OPTIONS,
+  type SourceLanguageCode,
   TRANSLATION_LANGUAGE_OPTIONS,
   type TranslationLanguageCode,
 } from "./languages";
 
 const MODEL_URL = import.meta.env.VITE_VOSK_MODEL_URL ?? "/model.tar.gz";
+const DEFAULT_SOURCE_LANGUAGE: SourceLanguageCode = "ru";
 const DEFAULT_TARGET_LANGUAGE: TranslationLanguageCode = "en";
 
 function App() {
   const { t } = useI18nTranslation();
+  const [page, setPage] = useState<"main" | "settings">("main");
+  const [sourceLanguage, setSourceLanguage] = useState<SourceLanguageCode>(DEFAULT_SOURCE_LANGUAGE);
   const [targetLanguage, setTargetLanguage] =
     useState<TranslationLanguageCode>(DEFAULT_TARGET_LANGUAGE);
   const { theme, resolvedTheme, setTheme } = useTheme();
@@ -46,8 +53,8 @@ function App() {
   const { isInstalled, isInstallAvailable, install } = usePWAInstall();
 
   useEffect(() => {
-    translate(transcript, RECOGNITION_LANGUAGE, targetLanguage);
-  }, [targetLanguage, transcript, translate]);
+    translate(transcript, sourceLanguage, targetLanguage);
+  }, [sourceLanguage, targetLanguage, transcript, translate]);
 
   useEffect(() => {
     return () => {
@@ -62,8 +69,18 @@ function App() {
   }, [clearTranscript, clearTranslation]);
 
   const handleSpeak = useCallback(() => {
-    speak(translatedText || transcript, translatedText ? getSpeechLocale(targetLanguage) : "ru-RU");
-  }, [speak, targetLanguage, translatedText, transcript]);
+    const locale = translatedText
+      ? getSpeechLocale(targetLanguage)
+      : getSourceSpeechLocale(sourceLanguage);
+    speak(translatedText || transcript, locale);
+  }, [speak, sourceLanguage, targetLanguage, translatedText, transcript]);
+
+  const handleSwapLanguages = useCallback(() => {
+    const newSource = targetLanguage as SourceLanguageCode;
+    const newTarget = sourceLanguage as TranslationLanguageCode;
+    setSourceLanguage(newSource);
+    setTargetLanguage(newTarget);
+  }, [sourceLanguage, targetLanguage]);
 
   const handleUiLanguageChange = useCallback((language: UiLocale) => {
     void i18n.changeLanguage(language);
@@ -108,6 +125,11 @@ function App() {
     label: t(`languages.${language}`),
   }));
 
+  const sourceLanguageOptions = SOURCE_LANGUAGE_OPTIONS.map((language) => ({
+    value: language.code,
+    label: t(language.labelKey),
+  }));
+
   const translationLanguageOptions = TRANSLATION_LANGUAGE_OPTIONS.map((language) => ({
     value: language.code,
     label: t(language.labelKey),
@@ -120,12 +142,38 @@ function App() {
   ];
 
   const activeUiLocale = normalizeUiLocale(i18n.resolvedLanguage ?? i18n.language) as UiLocale;
-  const targetLanguageLabel =
-    translationLanguageOptions.find((option) => option.value === targetLanguage)?.label ??
+  const currentSourceLanguageLabel =
+    sourceLanguageOptions.find((opt) => opt.value === sourceLanguage)?.label ?? "";
+  const currentTargetLanguageLabel =
+    translationLanguageOptions.find((opt) => opt.value === targetLanguage)?.label ??
     t("languages.en");
 
+  if (page === "settings") {
+    return (
+      <main className={styles.appShell}>
+        <SettingsPage
+          backLabel={t("back")}
+          title={t("settings")}
+          themeLabel={t("theme")}
+          theme={theme}
+          themeOptions={themeOptions}
+          onThemeChange={setTheme}
+          interfaceLanguageLabel={t("interfaceLanguage")}
+          selectedUiLanguage={activeUiLocale}
+          uiLanguageOptions={uiLanguageOptions}
+          onUiLanguageChange={handleUiLanguageChange}
+          installLabel={isInstalled ? t("installed") : t("install")}
+          isInstalled={isInstalled}
+          isInstallAvailable={isInstallAvailable}
+          onInstall={install}
+          onBack={() => setPage("main")}
+        />
+      </main>
+    );
+  }
+
   return (
-    <main className="app-shell">
+    <main className={styles.appShell}>
       <TopBar
         appName={t("appName")}
         eyebrow={t("heroEyebrow")}
@@ -133,33 +181,27 @@ function App() {
         lead={t("heroLead")}
         browserHint={t("browserHint")}
         status={status}
-        browserLocaleLabel={t("statusBrowserLocale")}
-        targetLanguageLabel={t("statusTarget")}
-        themeLabel={t("statusTheme")}
-        interfaceLanguageLabel={t("interfaceLanguage")}
+        sourceLanguageLabel={t("sourceLanguage")}
+        selectedSourceLanguage={sourceLanguage}
+        sourceLanguageOptions={sourceLanguageOptions}
+        onSourceLanguageChange={setSourceLanguage}
+        swapLanguagesLabel={t("swapLanguages")}
+        onSwapLanguages={handleSwapLanguages}
         translationLanguageLabel={t("translationLanguage")}
-        clearLabel={t("clear")}
-        installLabel={isInstalled ? t("installed") : t("install")}
-        isInstalled={isInstalled}
-        isInstallAvailable={isInstallAvailable}
-        canClear={canClear}
-        selectedUiLanguage={activeUiLocale}
         selectedTargetLanguage={targetLanguage}
-        theme={theme}
-        uiLanguageOptions={uiLanguageOptions}
         translationLanguageOptions={translationLanguageOptions}
-        themeOptions={themeOptions}
-        onUiLanguageChange={handleUiLanguageChange}
         onTargetLanguageChange={setTargetLanguage}
-        onThemeChange={setTheme}
+        clearLabel={t("clear")}
+        canClear={canClear}
         onClear={clearAll}
-        onInstall={install}
+        settingsLabel={t("settings")}
+        onOpenSettings={() => setPage("settings")}
       />
       <Panes
         sourceTitle={t("sourcePane")}
         targetTitle={t("targetPane")}
-        sourceLanguageLabel={t("languages.ru")}
-        targetLanguageLabel={targetLanguageLabel}
+        sourceLanguageLabel={currentSourceLanguageLabel}
+        targetLanguageLabel={currentTargetLanguageLabel}
         transcript={transcript}
         partialTranscript={partialTranscript}
         translatedText={translatedText}
@@ -168,8 +210,8 @@ function App() {
         partialLabel={t("partialLabel")}
         translationNote={t("translationOnlyFromRussian")}
       />
-      {error ? <p className="error">{error}</p> : null}
-      {translationError ? <p className="error">{translationError}</p> : null}
+      {error ? <p className={styles.error}>{error}</p> : null}
+      {translationError ? <p className={styles.error}>{translationError}</p> : null}
       <Controls
         isRecording={isRecording}
         isSpeaking={isSpeaking}

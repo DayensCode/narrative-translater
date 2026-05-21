@@ -91,33 +91,58 @@ function splitForTranslation(text: string): string[] {
   return chunks;
 }
 
+// Direct models for source → English
+const TO_EN: Record<string, string> = {
+  ru: "Xenova/opus-mt-ru-en",
+  es: "Xenova/opus-mt-es-en",
+  fr: "Xenova/opus-mt-fr-en",
+  zh: "Xenova/opus-mt-zh-en",
+  ar: "Xenova/opus-mt-ar-en",
+  hi: "Xenova/opus-mt-hi-en",
+};
+
+// Direct models for English → target
+const FROM_EN: Record<string, TranslationStage> = {
+  ru: { model: "Xenova/opus-mt-en-ru" },
+  es: { model: "Xenova/opus-mt-en-es" },
+  fr: { model: "Xenova/opus-mt-en-fr" },
+  hi: { model: "Xenova/opus-mt-en-hi" },
+  zh: { model: "Xenova/opus-mt-en-zh", prefix: ">>cmn_Hans<<" },
+  ar: { model: "Xenova/opus-mt-en-ar", prefix: ">>ara<<" },
+};
+
+// Higher-quality direct routes that skip the English pivot
+const DIRECT: Record<string, TranslationStage[]> = {
+  "ru:es": [{ model: "Xenova/opus-mt-ru-es" }],
+  "ru:fr": [{ model: "Xenova/opus-mt-ru-fr" }],
+};
+
 function getTranslationRoute(
   sourceLanguage: string,
   targetLanguage: string,
 ): TranslationStage[] {
-  if (sourceLanguage === targetLanguage) {
-    return [];
+  if (sourceLanguage === targetLanguage) return [];
+
+  const directKey = `${sourceLanguage}:${targetLanguage}`;
+  if (DIRECT[directKey]) return DIRECT[directKey];
+
+  // source → en
+  if (targetLanguage === "en") {
+    const model = TO_EN[sourceLanguage];
+    return model ? [{ model }] : [];
   }
 
-  const routes: Record<string, TranslationStage[]> = {
-    "ru:en": [{ model: "Xenova/opus-mt-ru-en" }],
-    "ru:es": [{ model: "Xenova/opus-mt-ru-es" }],
-    "ru:fr": [{ model: "Xenova/opus-mt-ru-fr" }],
-    "ru:hi": [
-      { model: "Xenova/opus-mt-ru-en" },
-      { model: "Xenova/opus-mt-en-hi" },
-    ],
-    "ru:zh": [
-      { model: "Xenova/opus-mt-ru-en" },
-      { model: "Xenova/opus-mt-en-zh", prefix: ">>cmn_Hans<<" },
-    ],
-    "ru:ar": [
-      { model: "Xenova/opus-mt-ru-en" },
-      { model: "Xenova/opus-mt-en-ar", prefix: ">>ara<<" },
-    ],
-  };
+  // en → target
+  if (sourceLanguage === "en") {
+    const stage = FROM_EN[targetLanguage];
+    return stage ? [stage] : [];
+  }
 
-  return routes[`${sourceLanguage}:${targetLanguage}`] ?? [];
+  // source → en → target (pivot)
+  const toEnModel = TO_EN[sourceLanguage];
+  const fromEnStage = FROM_EN[targetLanguage];
+  if (!toEnModel || !fromEnStage) return [];
+  return [{ model: toEnModel }, fromEnStage];
 }
 
 async function runStage(text: string, stage: TranslationStage): Promise<string> {

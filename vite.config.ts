@@ -16,11 +16,16 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: [".localhost"],
   },
+  css: {
+    modules: {
+      localsConvention: "camelCase",
+    },
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["vite.svg"],
+      includeAssets: ["favicon.ico"],
       devOptions: {
         enabled: true,
         type: "module",
@@ -71,7 +76,7 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "/vite.svg",
+            src: "/favicon.ico",
             sizes: "any",
             type: "image/svg+xml",
             purpose: "any maskable",
