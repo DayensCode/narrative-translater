@@ -1,6 +1,6 @@
 .hero-card {
     display: grid;
-    grid-template-columns: minmax(250px, 0.2fr) minmax(0, 1.8fr);
+    grid-template-columns: minmax(350px, 0.2fr) minmax(0, 1.8fr);
     gap: 1.25rem;
     padding: 1.15rem;
     border: 1px solid var(--line);
