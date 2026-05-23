@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useTranslation as useI18nTranslation } from "react-i18next";
-import styles from "./App.module.css";
-import { Controls } from "./components/Controls";
-import { Panes } from "./components/Panes";
-import { SettingsPage } from "./components/SettingsPage";
-import { TopBar } from "./components/TopBar";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Loader } from "./components/Loader";
 
 import { usePWAInstall } from "./hooks/usePWAInstall";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
@@ -25,10 +22,12 @@ import {
 const MODEL_URL = import.meta.env.VITE_VOSK_MODEL_URL ?? "/model.tar.gz";
 const DEFAULT_SOURCE_LANGUAGE: SourceLanguageCode = "ru";
 const DEFAULT_TARGET_LANGUAGE: TranslationLanguageCode = "en";
+const MainPage = lazy(() => import("./pages/MainPage"));
+const SettingsRoute = lazy(() => import("./pages/SettingsRoute"));
 
 function App() {
   const { t } = useI18nTranslation();
-  const [page, setPage] = useState<"main" | "settings">("main");
+  const navigate = useNavigate();
   const [sourceLanguage, setSourceLanguage] = useState<SourceLanguageCode>(DEFAULT_SOURCE_LANGUAGE);
   const [targetLanguage, setTargetLanguage] =
     useState<TranslationLanguageCode>(DEFAULT_TARGET_LANGUAGE);
@@ -148,84 +147,88 @@ function App() {
     translationLanguageOptions.find((opt) => opt.value === targetLanguage)?.label ??
     t("languages.en");
 
-  if (page === "settings") {
-    return (
-      <main className={styles.appShell}>
-        <SettingsPage
-          backLabel={t("back")}
-          title={t("settings")}
-          themeLabel={t("theme")}
-          theme={theme}
-          themeOptions={themeOptions}
-          onThemeChange={setTheme}
-          interfaceLanguageLabel={t("interfaceLanguage")}
-          selectedUiLanguage={activeUiLocale}
-          uiLanguageOptions={uiLanguageOptions}
-          onUiLanguageChange={handleUiLanguageChange}
-          installLabel={isInstalled ? t("installed") : t("install")}
-          isInstalled={isInstalled}
-          isInstallAvailable={isInstallAvailable}
-          onInstall={install}
-          onBack={() => setPage("main")}
-        />
-      </main>
-    );
-  }
-
   return (
-    <main className={styles.appShell}>
-      <TopBar
-        appName={t("appName")}
-        eyebrow={t("heroEyebrow")}
-        title={t("heroTitle")}
-        lead={t("heroLead")}
-        browserHint={t("browserHint")}
-        status={status}
-        sourceLanguageLabel={t("sourceLanguage")}
-        selectedSourceLanguage={sourceLanguage}
-        sourceLanguageOptions={sourceLanguageOptions}
-        onSourceLanguageChange={setSourceLanguage}
-        swapLanguagesLabel={t("swapLanguages")}
-        onSwapLanguages={handleSwapLanguages}
-        translationLanguageLabel={t("translationLanguage")}
-        selectedTargetLanguage={targetLanguage}
-        translationLanguageOptions={translationLanguageOptions}
-        onTargetLanguageChange={setTargetLanguage}
-        clearLabel={t("clear")}
-        canClear={canClear}
-        onClear={clearAll}
-        settingsLabel={t("settings")}
-        onOpenSettings={() => setPage("settings")}
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<Loader label={t("statusModelLoading")} />}>
+            <MainPage
+              appName={t("appName")}
+              eyebrow={t("heroEyebrow")}
+              title={t("heroTitle")}
+              lead={t("heroLead")}
+              browserHint={t("browserHint")}
+              status={status}
+              sourceLanguageLabel={t("sourceLanguage")}
+              selectedSourceLanguage={sourceLanguage}
+              sourceLanguageOptions={sourceLanguageOptions}
+              onSourceLanguageChange={setSourceLanguage}
+              swapLanguagesLabel={t("swapLanguages")}
+              onSwapLanguages={handleSwapLanguages}
+              translationLanguageLabel={t("translationLanguage")}
+              selectedTargetLanguage={targetLanguage}
+              translationLanguageOptions={translationLanguageOptions}
+              onTargetLanguageChange={setTargetLanguage}
+              clearLabel={t("clear")}
+              canClear={canClear}
+              onClear={clearAll}
+              settingsLabel={t("settings")}
+              onOpenSettings={() => navigate("/settings")}
+              sourceTitle={t("sourcePane")}
+              targetTitle={t("targetPane")}
+              sourceLanguageCurrentLabel={currentSourceLanguageLabel}
+              targetLanguageCurrentLabel={currentTargetLanguageLabel}
+              transcript={transcript}
+              partialTranscript={partialTranscript}
+              translatedText={translatedText}
+              sourcePlaceholder={t("sourcePlaceholder")}
+              targetPlaceholder={t("targetPlaceholder")}
+              partialLabel={t("partialLabel")}
+              translationNote={t("translationOnlyFromRussian")}
+              error={error}
+              translationError={translationError}
+              isRecording={isRecording}
+              isSpeaking={isSpeaking}
+              canRecord={!isModelLoading}
+              canSpeak={Boolean(translatedText || transcript)}
+              listenLabel={t("listenAction")}
+              stopListeningLabel={t("stopListeningAction")}
+              speakLabel={t("speakAction")}
+              stopSpeechLabel={t("stopSpeechAction")}
+              onToggleRecording={isRecording ? stopRecording : startRecording}
+              onSpeak={handleSpeak}
+              onStopSpeaking={stopSpeaking}
+            />
+          </Suspense>
+        }
       />
-      <Panes
-        sourceTitle={t("sourcePane")}
-        targetTitle={t("targetPane")}
-        sourceLanguageLabel={currentSourceLanguageLabel}
-        targetLanguageLabel={currentTargetLanguageLabel}
-        transcript={transcript}
-        partialTranscript={partialTranscript}
-        translatedText={translatedText}
-        sourcePlaceholder={t("sourcePlaceholder")}
-        targetPlaceholder={t("targetPlaceholder")}
-        partialLabel={t("partialLabel")}
-        translationNote={t("translationOnlyFromRussian")}
+      <Route
+        path="/settings"
+        element={
+          <Suspense fallback={<Loader label={t("statusModelLoading")} />}>
+            <SettingsRoute
+              backLabel={t("back")}
+              title={t("settings")}
+              themeLabel={t("theme")}
+              theme={theme}
+              themeOptions={themeOptions}
+              interfaceLanguageLabel={t("interfaceLanguage")}
+              selectedUiLanguage={activeUiLocale}
+              uiLanguageOptions={uiLanguageOptions}
+              installLabel={isInstalled ? t("installed") : t("install")}
+              isInstalled={isInstalled}
+              isInstallAvailable={isInstallAvailable}
+              onThemeChange={setTheme}
+              onUiLanguageChange={handleUiLanguageChange}
+              onInstall={install}
+              onBack={() => navigate("/")}
+            />
+          </Suspense>
+        }
       />
-      {error ? <p className={styles.error}>{error}</p> : null}
-      {translationError ? <p className={styles.error}>{translationError}</p> : null}
-      <Controls
-        isRecording={isRecording}
-        isSpeaking={isSpeaking}
-        canRecord={!isModelLoading}
-        canSpeak={Boolean(translatedText || transcript)}
-        listenLabel={t("listenAction")}
-        stopListeningLabel={t("stopListeningAction")}
-        speakLabel={t("speakAction")}
-        stopSpeechLabel={t("stopSpeechAction")}
-        onToggleRecording={isRecording ? stopRecording : startRecording}
-        onSpeak={handleSpeak}
-        onStopSpeaking={stopSpeaking}
-      />
-    </main>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

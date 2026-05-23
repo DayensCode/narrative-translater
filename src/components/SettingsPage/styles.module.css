@@ -29,7 +29,6 @@
 .settings-body {
     display: grid;
     gap: 0.75rem;
-    max-width: 480px;
 }
 
 .field {
