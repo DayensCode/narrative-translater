@@ -1,5 +1,7 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+
 :root {
-    font-family: "Avenir Next", "Segoe UI", sans-serif;
+    font-family: "Roboto", "Segoe UI", sans-serif;
     line-height: 1.5;
     font-weight: 400;
     font-synthesis: none;
@@ -14,9 +16,20 @@
     --text-soft: #5f5447;
     --line: rgba(60, 41, 18, 0.12);
     --line-strong: rgba(60, 41, 18, 0.22);
-    --accent: #a33f1f;
-    --accent-strong: #7c2510;
-    --accent-soft: rgba(163, 63, 31, 0.1);
+    --accent: #7861FF;
+    --accent-strong: #5f47e6;
+    --accent-soft: rgba(120, 97, 255, 0.12);
+    --text-on-accent: #fff7f0;
+    --text-on-accent-soft: #fff5ef;
+    --error-border: rgba(180, 49, 23, 0.2);
+    --error-bg: rgba(180, 49, 23, 0.08);
+    --error-text: #c53f21;
+    --loader-border: rgba(78, 53, 25, 0.12);
+    --loader-bg-start: rgba(255, 250, 243, 0.96);
+    --loader-bg-end: rgba(250, 240, 226, 0.92);
+    --loader-shadow: rgba(61, 36, 10, 0.08);
+    --loader-spinner-track: rgba(120, 97, 255, 0.18);
+    --loader-label: #7861FF;
     --success: #1f6f55;
     --shadow: 0 30px 80px rgba(56, 33, 9, 0.12);
 }
@@ -30,9 +43,20 @@ body[data-theme="dark"] {
     --text-soft: #bcae97;
     --line: rgba(243, 235, 221, 0.1);
     --line-strong: rgba(243, 235, 221, 0.18);
-    --accent: #ff8b4d;
-    --accent-strong: #ffc08f;
-    --accent-soft: rgba(255, 139, 77, 0.12);
+    --accent: #7861FF;
+    --accent-strong: #9b8aff;
+    --accent-soft: rgba(120, 97, 255, 0.16);
+    --text-on-accent: #fff7f0;
+    --text-on-accent-soft: #fff5ef;
+    --error-border: rgba(240, 118, 92, 0.28);
+    --error-bg: rgba(240, 118, 92, 0.12);
+    --error-text: #ff9f89;
+    --loader-border: rgba(243, 235, 221, 0.12);
+    --loader-bg-start: rgba(31, 31, 31, 0.94);
+    --loader-bg-end: rgba(22, 22, 22, 0.92);
+    --loader-shadow: rgba(0, 0, 0, 0.28);
+    --loader-spinner-track: rgba(120, 97, 255, 0.24);
+    --loader-label: #9b8aff;
     --success: #62c4a1;
     --shadow: 0 34px 84px rgba(0, 0, 0, 0.34);
 }
@@ -51,10 +75,7 @@ body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
-    background:
-        radial-gradient(circle at top left, rgba(231, 125, 78, 0.18), transparent 30%),
-        radial-gradient(circle at 80% 20%, rgba(203, 166, 101, 0.18), transparent 26%),
-        linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg), #000 4%) 100%);
+    background: var(--bg);
     color: var(--text);
 }
 

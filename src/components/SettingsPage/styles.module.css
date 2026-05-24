@@ -79,7 +79,7 @@
 
 .theme-chip.active {
     background: var(--accent);
-    color: #fff7f0;
+    color: var(--text-on-accent);
     border-color: var(--accent);
 }
 
@@ -108,7 +108,7 @@
 .install-btn {
     padding: 0.8rem 1.05rem;
     background: var(--accent);
-    color: #fff5ef;
+    color: var(--text-on-accent-soft);
     font-weight: 700;
     border: 1px solid var(--accent);
     border-radius: 999px;

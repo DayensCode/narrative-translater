@@ -19,18 +19,6 @@
     position: relative;
 }
 
-.pane-source::after {
-    content: "";
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 4rem;
-    height: 4rem;
-    border-radius: 1.2rem;
-    background: linear-gradient(160deg, rgba(163, 63, 31, 0.16), transparent);
-    pointer-events: none;
-}
-
 .pane-head {
     display: flex;
     justify-content: space-between;

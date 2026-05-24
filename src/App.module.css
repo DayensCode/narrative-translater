@@ -6,40 +6,13 @@
     overflow: hidden;
 }
 
-.app-shell::before,
-.app-shell::after {
-    content: "";
-    position: absolute;
-    inset: auto;
-    pointer-events: none;
-    z-index: -1;
-    border-radius: 999px;
-    filter: blur(30px);
-}
-
-.app-shell::before {
-    top: -8rem;
-    left: -5rem;
-    width: 18rem;
-    height: 18rem;
-    background: rgba(186, 94, 58, 0.2);
-}
-
-.app-shell::after {
-    right: -5rem;
-    bottom: 8rem;
-    width: 17rem;
-    height: 17rem;
-    background: rgba(218, 177, 110, 0.16);
-}
-
 .error {
     margin: 0.85rem 0 0;
     padding: 0.9rem 1rem;
     border-radius: 1rem;
-    border: 1px solid rgba(180, 49, 23, 0.2);
-    background: rgba(180, 49, 23, 0.08);
-    color: #c53f21;
+    border: 1px solid var(--error-border);
+    background: var(--error-bg);
+    color: var(--error-text);
 }
 
 @media (max-width: 720px) {

@@ -36,12 +36,12 @@
 .primary-btn {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff7f0;
+    color: var(--text-on-accent);
 }
 
 .primary-btn.recording {
-    background: #b83c29;
-    border-color: #b83c29;
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
 }
 
 .secondary-btn {
