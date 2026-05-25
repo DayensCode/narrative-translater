@@ -6,6 +6,7 @@ type PanesProps = {
   sourceLanguageLabel: string;
   targetLanguageLabel: string;
   transcript: string;
+  onSourceChange: (text: string) => void;
   partialTranscript: string;
   translatedText: string;
   sourcePlaceholder: string;
@@ -20,6 +21,7 @@ export function Panes({
   sourceLanguageLabel,
   targetLanguageLabel,
   transcript,
+  onSourceChange,
   partialTranscript,
   translatedText,
   sourcePlaceholder,
@@ -38,7 +40,13 @@ export function Panes({
           <span className={styles.panePill}>{partialTranscript ? partialLabel : sourceTitle}</span>
         </div>
         <div className={styles.paneContent}>
-          <p>{transcript || sourcePlaceholder}</p>
+          <textarea
+            className={styles.sourceInput}
+            value={transcript}
+            onChange={(e) => onSourceChange(e.target.value)}
+            placeholder={sourcePlaceholder}
+            rows={1}
+          />
         </div>
         {partialTranscript ? (
           <div className={styles.paneFoot}>

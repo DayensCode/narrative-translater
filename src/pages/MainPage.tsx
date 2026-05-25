@@ -2,27 +2,22 @@ import styles from "../App.module.css";
 import { Controls } from "../components/Controls";
 import { Panes } from "../components/Panes";
 import { TopBar } from "../components/TopBar";
-import type { SourceLanguageCode, TranslationLanguageCode } from "../languages";
-
-type Option<T extends string> = { value: T; label: string };
+type Option = { value: string; label: string };
 
 type MainPageProps = {
   appName: string;
   eyebrow: string;
-  title: string;
-  lead: string;
-  browserHint: string;
   status: string;
   sourceLanguageLabel: string;
-  selectedSourceLanguage: SourceLanguageCode;
-  sourceLanguageOptions: Option<SourceLanguageCode>[];
-  onSourceLanguageChange: (language: SourceLanguageCode) => void;
+  selectedSourceLanguage: string;
+  sourceLanguageOptions: Option[];
+  onSourceLanguageChange: (language: string) => void;
   swapLanguagesLabel: string;
   onSwapLanguages: () => void;
   translationLanguageLabel: string;
-  selectedTargetLanguage: TranslationLanguageCode;
-  translationLanguageOptions: Option<TranslationLanguageCode>[];
-  onTargetLanguageChange: (language: TranslationLanguageCode) => void;
+  selectedTargetLanguage: string;
+  translationLanguageOptions: Option[];
+  onTargetLanguageChange: (language: string) => void;
   clearLabel: string;
   canClear: boolean;
   onClear: () => void;
@@ -33,6 +28,7 @@ type MainPageProps = {
   sourceLanguageCurrentLabel: string;
   targetLanguageCurrentLabel: string;
   transcript: string;
+  onSourceChange: (text: string) => void;
   partialTranscript: string;
   translatedText: string;
   sourcePlaceholder: string;
@@ -57,9 +53,6 @@ type MainPageProps = {
 export default function MainPage({
   appName,
   eyebrow,
-  title,
-  lead,
-  browserHint,
   status,
   sourceLanguageLabel,
   selectedSourceLanguage,
@@ -81,6 +74,7 @@ export default function MainPage({
   sourceLanguageCurrentLabel,
   targetLanguageCurrentLabel,
   transcript,
+  onSourceChange,
   partialTranscript,
   translatedText,
   sourcePlaceholder,
@@ -106,9 +100,6 @@ export default function MainPage({
       <TopBar
         appName={appName}
         eyebrow={eyebrow}
-        title={title}
-        lead={lead}
-        browserHint={browserHint}
         status={status}
         sourceLanguageLabel={sourceLanguageLabel}
         selectedSourceLanguage={selectedSourceLanguage}
@@ -132,6 +123,7 @@ export default function MainPage({
         sourceLanguageLabel={sourceLanguageCurrentLabel}
         targetLanguageLabel={targetLanguageCurrentLabel}
         transcript={transcript}
+        onSourceChange={onSourceChange}
         partialTranscript={partialTranscript}
         translatedText={translatedText}
         sourcePlaceholder={sourcePlaceholder}

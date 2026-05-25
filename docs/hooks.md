@@ -1,75 +1,136 @@
 # Хуки
 
-Каждый хук изолирует одну подсистему. App.tsx только подписывается на их состояние и вызывает их методы.
+## Общий принцип
+
+Все хуки в проекте изолируют конкретную подсистему браузера. `App.tsx` связывает их между собой, но детали работы остаются внутри хука.
 
 ## useSpeechRecognition
 
-**Файл:** `src/hooks/useSpeechRecognition.ts`
+Файл: `src/hooks/useSpeechRecognition.ts`
 
-Управляет полным циклом голосового ввода: AudioContext → AudioWorklet → Vosk → транскрипт.
+Назначение:
 
-**Принимает:** `modelUrl: string`
+- загружает модель Vosk
+- получает доступ к микрофону
+- подключает `AudioWorklet`
+- считает VAD по аудиосэмплам
+- собирает финальный и промежуточный транскрипт
 
-**Возвращает:**
+Сигнатура:
+
+```ts
+useSpeechRecognition(modelUrl: string)
+```
+
+Возвращает:
+
 | Поле | Тип | Описание |
 |------|-----|----------|
-| `isRecording` | `boolean` | Идёт ли запись |
-| `isModelLoading` | `boolean` | Загружается ли модель Vosk |
-| `transcript` | `string` | Финальный транскрипт |
-| `partialTranscript` | `string` | Промежуточный результат |
-| `error` | `string` | Сообщение об ошибке |
-| `startRecording()` | `() => Promise<void>` | Запустить запись |
-| `stopRecording()` | `() => void` | Остановить запись |
-| `clearTranscript()` | `() => void` | Очистить тексты и ошибки |
-| `dispose()` | `() => void` | Освободить Vosk-модель и аудиоресурсы |
+| `isRecording` | `boolean` | Идёт ли активная запись |
+| `isModelLoading` | `boolean` | Загружается ли Vosk-модель |
+| `transcript` | `string` | Финальный распознанный текст |
+| `partialTranscript` | `string` | Текущий partial result от Vosk |
+| `error` | `string` | Ошибка распознавания или аудиопайплайна |
+| `startRecording` | `() => Promise<void>` | Запустить запись |
+| `stopRecording` | `() => void` | Остановить запись вручную |
+| `clearTranscript` | `() => void` | Сбросить transcript, partial и error |
+| `dispose` | `() => void` | Освободить recognizer, model и аудиоресурсы |
 
-**VAD:** RMS-порог `VOICE_ACTIVITY_THRESHOLD`. Молчание дольше `SILENCE_TIMEOUT_MS` — запись останавливается автоматически.
+Особенности:
 
----
+- VAD использует `VOICE_ACTIVITY_THRESHOLD`
+- автостоп срабатывает после `SILENCE_TIMEOUT_MS`
+- `AudioWorklet` грузится из `src/workers/audio-capture.worklet.ts`
+- recognizer создаётся на частоте `audioContext.sampleRate`
 
 ## useTranslation
 
-**Файл:** `src/hooks/useTranslation.ts`
+Файл: `src/hooks/useTranslation.ts`
 
-Управляет Web Worker перевода: инициализация, warmup, дебаунс, request ID.
+Назначение:
 
-**Возвращает:**
+- создаёт и завершает `translate.worker.ts`
+- отправляет warmup-сообщение при инициализации
+- дебаунсит перевод
+- отслеживает актуальный request id
+
+Сигнатура:
+
+```ts
+useTranslation()
+```
+
+Возвращает:
+
 | Поле | Тип | Описание |
 |------|-----|----------|
-| `isTranslating` | `boolean` | Идёт ли перевод |
+| `isTranslating` | `boolean` | Идёт ли перевод или debounce-ожидание |
 | `translatedText` | `string` | Последний успешный перевод |
-| `translationError` | `string` | Ошибка перевода |
-| `translate(text)` | `(text: string) => void` | Запустить перевод с дебаунсом |
-| `clearTranslation()` | `() => void` | Очистить состояние |
+| `translationError` | `string` | Ошибка от воркера перевода |
+| `translate` | `(text: string, sourceLanguage: string, targetLanguage: TranslationLanguageCode) => void` | Запланировать перевод |
+| `clearTranslation` | `() => void` | Сбросить перевод, ошибку и debounce |
 
-**Дебаунс:** `TRANSLATION_DEBOUNCE_MS` после последнего вызова `translate()`.
+Особенности:
 
----
+- пустой текст не отправляется в воркер
+- перевод откладывается на `TRANSLATION_DEBOUNCE_MS`
+- ответы с неактуальным `id` игнорируются
 
 ## useSpeechSynthesis
 
-**Файл:** `src/hooks/useSpeechSynthesis.ts`
+Файл: `src/hooks/useSpeechSynthesis.ts`
 
-Обёртка над `window.speechSynthesis` с подбором голоса по языку.
+Назначение:
 
-**Возвращает:**
+- оборачивает `window.speechSynthesis`
+- подбирает голос по языковому префиксу
+- отслеживает состояние проигрывания
+
+Возвращает:
+
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `isSpeaking` | `boolean` | Идёт ли озвучка |
-| `speak(text, lang)` | `(text: string, lang: string) => void` | Озвучить текст |
-| `stop()` | `() => void` | Остановить озвучку |
+| `speak` | `(text: string, lang: string) => void` | Озвучить текст на нужной локали |
+| `stop` | `() => void` | Отменить текущую озвучку |
 
----
+Особенности:
+
+- перед новым воспроизведением всегда вызывается `stop()`
+- если подходящий voice не найден, используется поведение браузера по умолчанию
 
 ## usePWAInstall
 
-**Файл:** `src/hooks/usePWAInstall.ts`
+Файл: `src/hooks/usePWAInstall.ts`
 
-Перехватывает `beforeinstallprompt` и управляет состоянием установки PWA.
+Назначение:
 
-**Возвращает:**
+- ловит `beforeinstallprompt`
+- управляет install button state
+- фиксирует успешную установку по `appinstalled`
+
+Возвращает:
+
 | Поле | Тип | Описание |
 |------|-----|----------|
-| `isInstalled` | `boolean` | Приложение установлено как PWA |
-| `isInstallAvailable` | `boolean` | Браузер предлагает установку |
-| `install()` | `() => Promise<void>` | Показать диалог установки |
+| `isInstalled` | `boolean` | Приложение уже установлено |
+| `isInstallAvailable` | `boolean` | Браузер разрешает показать install prompt |
+| `install` | `() => Promise<void>` | Запустить установку PWA |
+
+## useTheme
+
+Файл: `src/hooks/useTheme.ts`
+
+Назначение:
+
+- хранит пользовательский выбор темы
+- синхронизируется с `prefers-color-scheme`
+- сохраняет значение в `localStorage`
+
+Возвращает:
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `theme` | `ThemeMode` | Выбранный режим: `system`, `light`, `dark` |
+| `resolvedTheme` | `ResolvedTheme` | Фактическая активная тема: `light` или `dark` |
+| `setTheme` | `(theme: ThemeMode) => void` | Изменить режим |

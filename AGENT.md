@@ -1,30 +1,39 @@
 # AGENT.md — Narrative
 
-Этот файл описывает проект для AI-агентов (Claude Code и аналогов).
+Этот файл описывает текущее устройство проекта для AI-агентов и автоматических правок.
 
 ## Что это
 
-**Narrative** — PWA на React + TypeScript + Vite. Записывает русскую речь, распознаёт её через Vosk, переводит через HuggingFace Transformers (Web Worker), озвучивает через SpeechSynthesis. Всё локально, без серверов.
+`Narrative` это offline-first PWA на `React 19 + TypeScript + Vite`. Приложение распознаёт речь через `vosk-browser`, переводит текст через `@huggingface/transformers` в `Web Worker`, озвучивает результат через `SpeechSynthesis` и поддерживает мультиязычный UI, тему и установку как PWA.
 
-## Структура проекта
+## Актуальная структура
 
-```
+```text
 src/
-  App.tsx                  — корневой компонент, компонует хуки и компоненты
-  config.ts                — все константы (таймауты, пороги, параметры модели)
-  types/index.ts           — shared-типы между основным потоком и воркером
+  App.tsx                         — композиция состояния, маршрутов и хуков
+  main.tsx                        — HashRouter + registerSW
+  config.ts                       — runtime-константы аудио и перевода
+  types/index.ts                  — shared types для main thread и worker
+  i18n.ts                         — словари интерфейса и UI locales
+  languages.ts                    — source/target language options и speech locales
+  pages/
+    MainPage.tsx                  — главный экран приложения
+    SettingsRoute.tsx             — экран настроек
   hooks/
-    useSpeechRecognition.ts — AudioContext + AudioWorklet + Vosk + VAD
-    useTranslation.ts       — Web Worker + дебаунс + request ID
-    useSpeechSynthesis.ts   — SpeechSynthesis API
-    usePWAInstall.ts        — beforeinstallprompt + состояние установки
+    useSpeechRecognition.ts       — Vosk + AudioContext + AudioWorklet + VAD
+    useTranslation.ts             — lifecycle translation worker + debounce
+    useSpeechSynthesis.ts         — SpeechSynthesis API
+    usePWAInstall.ts              — beforeinstallprompt/appinstalled
+    useTheme.ts                   — theme persistence + system sync
   components/
-    TopBar.tsx              — заголовок, статус, кнопки
-    Panes.tsx               — панели с транскриптом и переводом
-    Controls.tsx            — кнопки микрофона, озвучки, стопа
+    TopBar/TopBar.tsx             — hero/header + language selectors + actions
+    Panes/Panes.tsx               — source/target panes
+    Controls/Controls.tsx         — buttons for record/speak/stop
+    SettingsPage/SettingsPage.tsx — UI settings and PWA install action
+    Loader/Loader.tsx             — Suspense fallback
   workers/
-    translate.worker.ts     — модуль Worker: загрузка модели, перевод
-    audio-capture.worklet.ts — AudioWorkletProcessor: передача семплов
+    translate.worker.ts           — Hugging Face translation worker
+    audio-capture.worklet.ts      — AudioWorklet processor
 ```
 
 ## Документация
@@ -35,26 +44,26 @@ src/
 - [Типы](./docs/types.md)
 - [Воркеры](./docs/workers.md)
 
-## Правила для агента
+## Инварианты проекта
 
-- **Константы** — только в `src/config.ts`, не хардкодить в коде.
-- **Shared-типы** — только в `src/types/index.ts`.
-- **Компоненты** — без хуков состояния и side effects. Только props и JSX.
-- **Бизнес-логика** — в хуках, не в компонентах и не в App.tsx.
-- **Воркер перевода** — импортирует типы из `../types` и константы из `../config`.
-- **Комментарии** — только там, где WHY неочевиден (скрытое ограничение, обходной путь).
+- Константы не хардкодим по коду, а выносим в `src/config.ts`, если они используются повторно или влияют на runtime-поведение.
+- Shared worker/main-thread types держим в `src/types/index.ts`.
+- Тяжёлые browser side effects остаются в hooks или workers, а не в presentational components.
+- `App.tsx` отвечает за orchestration, но не должен разрастаться за счёт дублирования логики из хуков.
+- Для перевода вся тяжёлая работа должна оставаться в `src/workers/translate.worker.ts`.
+- При правках документации ориентируйся на реальный код, а не на старые описания.
 
 ## Команды
 
 ```bash
-npm run dev      # запуск dev-сервера (http://narrative.localhost:5173)
-npm run build    # TypeScript-проверка + Vite build
-npm run lint     # ESLint
-npm run preview  # превью production-сборки
+npm run dev
+npm run build
+npm run lint
+npm run preview
 ```
 
 ## Переменные окружения
 
 | Переменная | По умолчанию | Описание |
 |-----------|--------------|----------|
-| `VITE_VOSK_MODEL_URL` | `/model.tar.gz` | URL модели Vosk |
+| `VITE_VOSK_MODEL_URL` | `/model.tar.gz` | URL или путь к архиву модели Vosk |

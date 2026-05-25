@@ -21,6 +21,9 @@ type SettingsRouteProps = {
   onUiLanguageChange: (language: UiLocale) => void;
   onInstall: () => void;
   onBack: () => void;
+  selectedLanguageCodes: string[];
+  onAddLanguage: (code: string) => void;
+  onRemoveLanguage: (code: string) => void;
 };
 
 export default function SettingsRoute(props: SettingsRouteProps) {

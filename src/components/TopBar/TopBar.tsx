@@ -1,26 +1,22 @@
 import { ArrowLeftRight, Settings } from "lucide-react";
-import type { SourceLanguageCode, TranslationLanguageCode } from "../../languages";
 import styles from "./styles.module.css";
 
-type Option<T extends string> = { value: T; label: string };
+type Option = { value: string; label: string };
 
 type TopBarProps = {
   appName: string;
   eyebrow: string;
-  title: string;
-  lead: string;
-  browserHint: string;
   status: string;
   sourceLanguageLabel: string;
-  selectedSourceLanguage: SourceLanguageCode;
-  sourceLanguageOptions: Option<SourceLanguageCode>[];
-  onSourceLanguageChange: (language: SourceLanguageCode) => void;
+  selectedSourceLanguage: string;
+  sourceLanguageOptions: Option[];
+  onSourceLanguageChange: (language: string) => void;
   swapLanguagesLabel: string;
   onSwapLanguages: () => void;
   translationLanguageLabel: string;
-  selectedTargetLanguage: TranslationLanguageCode;
-  translationLanguageOptions: Option<TranslationLanguageCode>[];
-  onTargetLanguageChange: (language: TranslationLanguageCode) => void;
+  selectedTargetLanguage: string;
+  translationLanguageOptions: Option[];
+  onTargetLanguageChange: (language: string) => void;
   clearLabel: string;
   canClear: boolean;
   onClear: () => void;
@@ -31,9 +27,6 @@ type TopBarProps = {
 export function TopBar({
   appName,
   eyebrow,
-  title,
-  lead,
-  browserHint,
   status,
   sourceLanguageLabel,
   selectedSourceLanguage,
@@ -67,7 +60,7 @@ export function TopBar({
             <span>{sourceLanguageLabel}</span>
             <select
               value={selectedSourceLanguage}
-              onChange={(e) => onSourceLanguageChange(e.target.value as SourceLanguageCode)}
+              onChange={(e) => onSourceLanguageChange(e.target.value)}
             >
               {sourceLanguageOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -91,7 +84,7 @@ export function TopBar({
             <span>{translationLanguageLabel}</span>
             <select
               value={selectedTargetLanguage}
-              onChange={(e) => onTargetLanguageChange(e.target.value as TranslationLanguageCode)}
+              onChange={(e) => onTargetLanguageChange(e.target.value)}
             >
               {translationLanguageOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>

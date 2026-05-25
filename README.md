@@ -1,52 +1,94 @@
 # Narrative
 
-PWA-приложение для записи русской речи, перевода в реальном времени и озвучки на английском. Всё работает локально в браузере — без серверов и облака.
+`Narrative` is an offline-first PWA for speech transcription, translation, and voice playback in the browser. Recognition runs through `vosk-browser`, translation runs in a dedicated Web Worker via `@huggingface/transformers`, and playback uses the browser `SpeechSynthesis` API.
 
-## Возможности
+## What The App Does
 
-- Запись голоса с микрофона
-- Распознавание речи через `vosk-browser` (локально, без отправки данных)
-- Перевод RU → EN через `@huggingface/transformers` в Web Worker
-- Озвучка перевода через браузерный `SpeechSynthesis`
-- Установка как PWA (работает офлайн после первого запуска)
+- Records speech from the microphone and transcribes it locally in the browser.
+- Translates text between supported languages without an application backend.
+- Plays back either the original transcript or the translated text with a matching browser voice.
+- Supports multilingual UI, theme switching, and installable PWA mode.
+- Caches app assets and remote model files for faster repeat launches.
 
-## Запуск
+## Current Capabilities
+
+- UI locales: `ru`, `en`, `zh`, `hi`, `es`, `ar`, `fr`
+- Source language selection: `ru`, `en`, `es`, `fr`, `hi`, `zh`, `ar`
+- Target language selection: `ru`, `en`, `es`, `fr`, `hi`, `zh`, `ar`
+- Recognition model: Vosk model from `VITE_VOSK_MODEL_URL`
+- Translation engine: Hugging Face browser pipelines in `src/workers/translate.worker.ts`
+- Routing: `HashRouter` with `#/` and `#/settings`
+
+Speech recognition is still tied to the Vosk model you ship in `public/model.tar.gz`. If you keep the default Russian model, source language switching changes labels and speech synthesis locale, but recognition quality is only correct for Russian input.
+
+## Development
 
 ```bash
 npm install
+npm run dev
 ```
 
-Создайте `.env` по примеру `.env.example`:
+Dev server defaults:
 
-```bash
-cp .env.example .env
-```
+- app: `http://localhost:5173`
+- PWA install testing: `http://narrative.localhost:5173`
 
-Скачайте модель Vosk и положите как `public/model.tar.gz`. При необходимости укажите путь в `.env`:
+Optional environment variable:
 
 ```env
 VITE_VOSK_MODEL_URL=/model.tar.gz
 ```
 
-```bash
-npm run dev
-```
+By default the app expects a Vosk archive at [public/model.tar.gz](/Users/andreyburov/Desktop/Narrative/Translater/public/model.tar.gz). Put the model there or point `VITE_VOSK_MODEL_URL` to another reachable URL.
 
-Для теста PWA-установки в dev используйте домен `http://narrative.localhost:5173`.
-
-## Сборка
+## Build
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Архитектура
+Preview server defaults to `http://localhost:4173`.
 
-Подробная документация — в [`/docs`](./docs/).
+## Architecture
 
-## Важно
+High-level flow:
 
-Модель Vosk и веса HuggingFace загружаются в браузер при первом запуске. PWA service worker кэширует их, поэтому последующие запуски значительно быстрее.
+```text
+Microphone
+  -> AudioWorklet
+  -> useSpeechRecognition
+  -> transcript state in App
+  -> useTranslation
+  -> translate.worker.ts
+  -> translated text
+  -> useSpeechSynthesis
+```
 
-Перевод выполняется в `src/workers/translate.worker.ts` с моделью `Xenova/opus-mt-ru-en`. Воркер запускается сразу при загрузке страницы и прогревает модель (`warmup`).
+Key modules:
+
+- [src/App.tsx](/Users/andreyburov/Desktop/Narrative/Translater/src/App.tsx): application composition, routes, state wiring
+- [src/pages/MainPage.tsx](/Users/andreyburov/Desktop/Narrative/Translater/src/pages/MainPage.tsx): main workspace screen
+- [src/pages/SettingsRoute.tsx](/Users/andreyburov/Desktop/Narrative/Translater/src/pages/SettingsRoute.tsx): settings screen wrapper
+- [src/hooks](/Users/andreyburov/Desktop/Narrative/Translater/src/hooks): browser API orchestration
+- [src/workers](/Users/andreyburov/Desktop/Narrative/Translater/src/workers): translation worker and audio worklet
+- [docs](/Users/andreyburov/Desktop/Narrative/Translater/docs): detailed internal docs
+
+## PWA And Caching
+
+The app uses `vite-plugin-pwa` with immediate service worker registration. Workbox caches:
+
+- local app shell assets
+- Hugging Face model files from `huggingface.co`, `hf.co`, `cdn-lfs.huggingface.co`
+- CDN assets from `cdn.jsdelivr.net`
+
+The cache limit is configured in [vite.config.ts](/Users/andreyburov/Desktop/Narrative/Translater/vite.config.ts).
+
+## Commands
+
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run preview
+```

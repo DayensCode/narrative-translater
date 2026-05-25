@@ -208,6 +208,7 @@ export function useSpeechRecognition(modelUrl: string) {
     isRecording,
     isModelLoading,
     transcript,
+    setTranscript,
     partialTranscript,
     error,
     startRecording,

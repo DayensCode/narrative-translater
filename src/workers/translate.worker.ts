@@ -6,58 +6,34 @@ import {
   TRANSLATION_NUM_BEAMS,
 } from "../config";
 
+const NLLB_MODEL = "Xenova/nllb-200-distilled-600M";
+
 type TranslatorFn = (
   input: string,
   options?: Record<string, unknown>,
 ) => Promise<Array<{ translation_text: string }>>;
 
-type TranslationStage = {
-  model: string;
-  prefix?: string;
-};
+let translatorPromise: Promise<TranslatorFn> | null = null;
 
-const translatorPromises = new Map<string, Promise<TranslatorFn>>();
+async function getTranslator(): Promise<TranslatorFn> {
+  if (translatorPromise) return translatorPromise;
 
-// MarianTokenizer does not ship a fast (Rust-based) tokenizer for browser builds.
-// The warning is expected and safe to suppress — the slow JS tokenizer is used instead.
-const originalConsoleWarn = console.warn.bind(console);
-function filteredWarn(...args: unknown[]) {
-  const first = args[0];
-  if (
-    typeof first === "string" &&
-    first.includes("MarianTokenizer") &&
-    first.includes("fast")
-  ) {
-    return;
-  }
-  originalConsoleWarn(...args);
-}
-
-async function getTranslatorForModel(model: string) {
-  const existing = translatorPromises.get(model);
-  if (existing) {
-    return existing;
-  }
-
-  const translatorPromise = (async () => {
-    console.warn = filteredWarn;
-
+  translatorPromise = (async () => {
     if (env.backends?.onnx?.wasm) {
       env.backends.onnx.wasm.numThreads = 1;
     }
 
     try {
-      return (await pipeline("translation", model, {
+      return (await pipeline("translation", NLLB_MODEL, {
         dtype: "q8",
       })) as unknown as TranslatorFn;
     } catch {
-      return (await pipeline("translation", model, {
+      return (await pipeline("translation", NLLB_MODEL, {
         dtype: "q4",
       })) as unknown as TranslatorFn;
     }
   })();
 
-  translatorPromises.set(model, translatorPromise);
   return translatorPromise;
 }
 
@@ -91,76 +67,27 @@ function splitForTranslation(text: string): string[] {
   return chunks;
 }
 
-// Direct models for source → English
-const TO_EN: Record<string, string> = {
-  ru: "Xenova/opus-mt-ru-en",
-  es: "Xenova/opus-mt-es-en",
-  fr: "Xenova/opus-mt-fr-en",
-  zh: "Xenova/opus-mt-zh-en",
-  ar: "Xenova/opus-mt-ar-en",
-  hi: "Xenova/opus-mt-hi-en",
-};
-
-// Direct models for English → target
-const FROM_EN: Record<string, TranslationStage> = {
-  ru: { model: "Xenova/opus-mt-en-ru" },
-  es: { model: "Xenova/opus-mt-en-es" },
-  fr: { model: "Xenova/opus-mt-en-fr" },
-  hi: { model: "Xenova/opus-mt-en-hi" },
-  zh: { model: "Xenova/opus-mt-en-zh", prefix: ">>cmn_Hans<<" },
-  ar: { model: "Xenova/opus-mt-en-ar", prefix: ">>ara<<" },
-};
-
-// Higher-quality direct routes that skip the English pivot
-const DIRECT: Record<string, TranslationStage[]> = {
-  "ru:es": [{ model: "Xenova/opus-mt-ru-es" }],
-  "ru:fr": [{ model: "Xenova/opus-mt-ru-fr" }],
-};
-
-function getTranslationRoute(
-  sourceLanguage: string,
-  targetLanguage: string,
-): TranslationStage[] {
-  if (sourceLanguage === targetLanguage) return [];
-
-  const directKey = `${sourceLanguage}:${targetLanguage}`;
-  if (DIRECT[directKey]) return DIRECT[directKey];
-
-  // source → en
-  if (targetLanguage === "en") {
-    const model = TO_EN[sourceLanguage];
-    return model ? [{ model }] : [];
-  }
-
-  // en → target
-  if (sourceLanguage === "en") {
-    const stage = FROM_EN[targetLanguage];
-    return stage ? [stage] : [];
-  }
-
-  // source → en → target (pivot)
-  const toEnModel = TO_EN[sourceLanguage];
-  const fromEnStage = FROM_EN[targetLanguage];
-  if (!toEnModel || !fromEnStage) return [];
-  return [{ model: toEnModel }, fromEnStage];
-}
-
-async function runStage(text: string, stage: TranslationStage): Promise<string> {
-  const translator = await getTranslatorForModel(stage.model);
+async function translateText(
+  text: string,
+  srcLang: string,
+  tgtLang: string,
+): Promise<string> {
+  const translator = await getTranslator();
   const chunks = splitForTranslation(text);
-  const translatedParts: string[] = [];
+  const parts: string[] = [];
 
   for (const chunk of chunks) {
-    const stagedInput = stage.prefix ? `${stage.prefix} ${chunk}` : chunk;
-    const output = await translator(stagedInput, {
+    const output = await translator(chunk, {
+      src_lang: srcLang,
+      tgt_lang: tgtLang,
       max_new_tokens: TRANSLATION_MAX_NEW_TOKENS,
       num_beams: TRANSLATION_NUM_BEAMS,
     });
-    const translatedChunk = output[0]?.translation_text?.trim() ?? "";
-    if (translatedChunk) translatedParts.push(translatedChunk);
+    const translated = output[0]?.translation_text?.trim() ?? "";
+    if (translated) parts.push(translated);
   }
 
-  return translatedParts.join(" ").trim();
+  return parts.join(" ").trim();
 }
 
 self.onmessage = async (event: MessageEvent<TranslationRequest>) => {
@@ -168,7 +95,7 @@ self.onmessage = async (event: MessageEvent<TranslationRequest>) => {
 
   if (action === "warmup") {
     try {
-      await getTranslatorForModel("Xenova/opus-mt-ru-en");
+      await getTranslator();
       self.postMessage({
         id,
         action: "warmup",
@@ -199,33 +126,21 @@ self.onmessage = async (event: MessageEvent<TranslationRequest>) => {
     return;
   }
 
-  try {
-    const route = getTranslationRoute(sourceLanguage, targetLanguage);
-
-    if (sourceLanguage === targetLanguage) {
-      self.postMessage({
-        id,
-        action: "translate",
-        translatedText: sourceText,
-      } satisfies TranslationResponse);
-      return;
-    }
-
-    if (route.length === 0) {
-      throw new Error(
-        `Translation route is not configured for ${sourceLanguage} -> ${targetLanguage}.`,
-      );
-    }
-
-    let currentText = sourceText;
-    for (const stage of route) {
-      currentText = await runStage(currentText, stage);
-    }
-
+  if (sourceLanguage === targetLanguage) {
     self.postMessage({
       id,
       action: "translate",
-      translatedText: currentText,
+      translatedText: sourceText,
+    } satisfies TranslationResponse);
+    return;
+  }
+
+  try {
+    const result = await translateText(sourceText, sourceLanguage, targetLanguage);
+    self.postMessage({
+      id,
+      action: "translate",
+      translatedText: result,
     } satisfies TranslationResponse);
   } catch (error) {
     const message =

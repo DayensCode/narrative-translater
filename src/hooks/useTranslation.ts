@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { TranslationLanguageCode } from "../languages";
 import type { TranslationRequest, TranslationResponse } from "../types";
 import { TRANSLATION_DEBOUNCE_MS } from "../config";
 
@@ -47,7 +46,7 @@ export function useTranslation() {
   }, []);
 
   const translate = useCallback(
-    (text: string, sourceLanguage: string, targetLanguage: TranslationLanguageCode) => {
+    (text: string, sourceLanguage: string, targetLanguage: string) => {
     if (debounceRef.current) {
       window.clearTimeout(debounceRef.current);
       debounceRef.current = null;
