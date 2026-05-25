@@ -31,7 +31,7 @@ export function Panes({
 }: PanesProps) {
   return (
     <section className={styles.workspaceGrid}>
-      <article className={`${styles.pane} ${styles.paneSource}`}>
+      <article className={`${styles.pane} ${styles.paneSource}`} data-tour-id="source-pane">
         <div className={styles.paneHead}>
           <div>
             <p className={styles.paneKicker}>{sourceTitle}</p>
@@ -46,6 +46,7 @@ export function Panes({
             onChange={(e) => onSourceChange(e.target.value)}
             placeholder={sourcePlaceholder}
             rows={1}
+            data-tour-id="source-input"
           />
         </div>
         {partialTranscript ? (
@@ -56,7 +57,7 @@ export function Panes({
         ) : null}
       </article>
 
-      <article className={`${styles.pane} ${styles.paneTarget}`}>
+      <article className={`${styles.pane} ${styles.paneTarget}`} data-tour-id="target-pane">
         <div className={styles.paneHead}>
           <div>
             <p className={styles.paneKicker}>{targetTitle}</p>
@@ -67,7 +68,9 @@ export function Panes({
         <div className={styles.paneContent}>
           <p>{translatedText || targetPlaceholder}</p>
         </div>
-        <div className={styles.paneNote}>{translationNote}</div>
+        <div className={styles.paneNote} data-tour-id="translation-note">
+          {translationNote}
+        </div>
       </article>
     </section>
   );

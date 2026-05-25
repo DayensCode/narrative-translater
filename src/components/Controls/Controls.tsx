@@ -29,13 +29,14 @@ export function Controls({
   onStopSpeaking,
 }: ControlsProps) {
   return (
-    <footer className={styles.bottomControls}>
+    <footer className={styles.bottomControls} data-tour-id="controls-panel">
       <button
         type="button"
         onClick={onSpeak}
         disabled={!canSpeak}
         className={`${styles.controlBtn} ${styles.secondaryBtn}`}
         aria-label={speakLabel}
+        data-tour-id="speak-button"
       >
         <Volume2 size={18} strokeWidth={2.4} />
         <span>{speakLabel}</span>
@@ -47,6 +48,7 @@ export function Controls({
         disabled={!canRecord}
         className={`${styles.controlBtn} ${styles.primaryBtn} ${isRecording ? styles.recording : ""}`}
         aria-label={isRecording ? stopListeningLabel : listenLabel}
+        data-tour-id="listen-button"
       >
         {isRecording ? (
           <Square size={16} strokeWidth={2.8} />
@@ -62,6 +64,7 @@ export function Controls({
         disabled={!isSpeaking}
         className={`${styles.controlBtn} ${styles.tertiaryBtn}`}
         aria-label={stopSpeechLabel}
+        data-tour-id="stop-speech-button"
       >
         <Square size={16} strokeWidth={2.7} />
         <span>{stopSpeechLabel}</span>

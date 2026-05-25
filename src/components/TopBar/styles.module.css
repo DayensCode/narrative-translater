@@ -132,6 +132,10 @@
     transform: rotate(180deg);
 }
 
+.swap-btn svg {
+    transition: transform 180ms ease;
+}
+
 .hero-actions {
     display: flex;
     justify-content: flex-end;
@@ -177,6 +181,18 @@
     .hero-card {
         border-radius: 1.35rem;
         padding: 0.95rem;
+    }
+
+    .lang-pair {
+        grid-template-columns: 1fr;
+    }
+
+    .swap-btn {
+        justify-self: center;
+    }
+
+    .swap-btn svg {
+        transform: rotate(90deg);
     }
 
     .hero-actions {

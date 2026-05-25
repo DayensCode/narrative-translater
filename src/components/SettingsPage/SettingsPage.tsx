@@ -65,15 +65,18 @@ export function SettingsPage({
           type="button"
           className={`${styles.ghostBtn} ${styles.settingsBackBtn}`}
           onClick={onBack}
+          data-tour-id="settings-back-button"
         >
           <ArrowLeft size={16} />
           {backLabel}
         </button>
-        <h1 className={styles.settingsTitle}>{title}</h1>
+        <h1 className={styles.settingsTitle} data-tour-id="settings-page-title">
+          {title}
+        </h1>
       </div>
 
       <div className={styles.settingsBody}>
-        <div className={styles.field}>
+        <div className={styles.field} data-tour-id="settings-ui-language-field">
           <span>{interfaceLanguageLabel}</span>
           <select
             value={selectedUiLanguage}
@@ -87,7 +90,7 @@ export function SettingsPage({
           </select>
         </div>
 
-        <div className={styles.field}>
+        <div className={styles.field} data-tour-id="settings-theme-field">
           <span>{themeLabel}</span>
           <div className={styles.themeSwitcher} role="tablist" aria-label={themeLabel}>
             {themeOptions.map((opt) => (
@@ -103,7 +106,7 @@ export function SettingsPage({
           </div>
         </div>
 
-        <div className={styles.field}>
+        <div className={styles.field} data-tour-id="settings-translation-languages-field">
           <span>Translation languages</span>
 
           <div className={styles.selectedLanguages}>
@@ -132,6 +135,7 @@ export function SettingsPage({
             placeholder="Search languages…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            data-tour-id="settings-language-search"
           />
 
           {filteredLanguages.length > 0 && (
@@ -172,6 +176,7 @@ export function SettingsPage({
               className={styles.installBtn}
               disabled={!isInstallAvailable || isInstalled}
               onClick={onInstall}
+              data-tour-id="settings-install-button"
             >
               {installLabel}
             </button>

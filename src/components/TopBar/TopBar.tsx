@@ -48,15 +48,17 @@ export function TopBar({
     <header className={styles.heroCard}>
       <div className={styles.heroCopy}>
         <p className={styles.heroEyebrow}>{eyebrow}</p>
-        <div className={styles.brandLockup}>
+        <div className={styles.brandLockup} data-tour-id="app-brand">
           <span className={styles.brandMark}>{appName}</span>
-          <span className={styles.heroStatus}>{status}</span>
+          <span className={styles.heroStatus} data-tour-id="app-status">
+            {status}
+          </span>
         </div>
       </div>
 
       <div className={styles.heroSide}>
         <div className={styles.langPair}>
-          <label className={styles.field}>
+          <label className={styles.field} data-tour-id="source-language-field">
             <span>{sourceLanguageLabel}</span>
             <select
               value={selectedSourceLanguage}
@@ -76,11 +78,12 @@ export function TopBar({
             aria-label={swapLanguagesLabel}
             title={swapLanguagesLabel}
             onClick={onSwapLanguages}
+            data-tour-id="swap-languages-button"
           >
             <ArrowLeftRight size={16} />
           </button>
 
-          <label className={styles.field}>
+          <label className={styles.field} data-tour-id="target-language-field">
             <span>{translationLanguageLabel}</span>
             <select
               value={selectedTargetLanguage}
@@ -101,6 +104,7 @@ export function TopBar({
             onClick={onClear}
             className={styles.ghostBtn}
             disabled={!canClear}
+            data-tour-id="clear-button"
           >
             {clearLabel}
           </button>
@@ -108,6 +112,7 @@ export function TopBar({
             type="button"
             onClick={onOpenSettings}
             className={`${styles.ghostBtn} ${styles.settingsBtn}`}
+            data-tour-id="settings-button"
           >
             <Settings size={16} />
             {settingsLabel}
