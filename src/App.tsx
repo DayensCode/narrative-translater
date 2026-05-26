@@ -13,7 +13,6 @@ import { i18n, type UiLocale, UI_LOCALES } from "./i18n";
 import { getLocalizedLanguageName, getNllbSpeechLocale } from "./nllb-languages";
 import { normalizeUiLocale } from "./languages";
 
-const MODEL_URL = import.meta.env.VITE_VOSK_MODEL_URL ?? "/model.tar.gz";
 const DEFAULT_SOURCE_LANGUAGE = "rus_Cyrl";
 const DEFAULT_TARGET_LANGUAGE = "eng_Latn";
 const MainPage = lazy(() => import("./pages/MainPage"));
@@ -38,7 +37,7 @@ function App() {
     stopRecording,
     clearTranscript,
     dispose: disposeRecognition,
-  } = useSpeechRecognition(MODEL_URL);
+  } = useSpeechRecognition(sourceLanguage);
 
   const { isTranslating, translatedText, translationError, translate, clearTranslation } =
     useTranslation();

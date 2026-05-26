@@ -1,3 +1,12 @@
+export type WhisperRequest =
+  | { type: "warmup" }
+  | { type: "transcribe"; audio: Float32Array; language: string | undefined; sampleRate: number };
+
+export type WhisperResponse =
+  | { type: "ready" }
+  | { type: "result"; text: string }
+  | { type: "error"; message: string };
+
 export type TranslationRequest =
   | { id: number; action: "warmup" }
   | {

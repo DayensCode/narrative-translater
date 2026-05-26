@@ -4,6 +4,10 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    // Large ML/runtime chunks are expected in this app.
+    chunkSizeWarningLimit: 7000,
+  },
   server: {
     host: true,
     port: 5173,
@@ -31,6 +35,7 @@ export default defineConfig({
         type: "module",
       },
       workbox: {
+        inlineWorkboxRuntime: true,
         maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
