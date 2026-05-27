@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation as useI18nTranslation } from "react-i18next";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Loader } from "./components/Loader";
@@ -29,6 +29,8 @@ function App() {
   const {
     isRecording,
     isModelLoading,
+    modelLoadingProgress,
+    modelLoadingStage,
     isTranscribing,
     transcript,
     setTranscript,
@@ -142,6 +144,37 @@ function App() {
     { value: "light", label: t("themeLight") },
     { value: "dark", label: t("themeDark") },
   ];
+
+  const loadingStageLabelByValue: Record<string, string> = {
+    "Loading model": t("loadingStageLoadingModel"),
+    "Initializing model": t("loadingStageInitializingModel"),
+    "Model ready": t("loadingStageReady"),
+  };
+  const loadingHints = useMemo(
+    () => [
+      t("loadingTipOffline"),
+      t("loadingTipPrivacy"),
+      t("loadingTipPwa"),
+      t("loadingTipLocalCompute"),
+    ],
+    [t],
+  );
+  const localizedLoadingStage =
+    loadingStageLabelByValue[modelLoadingStage] ?? modelLoadingStage;
+
+  if (isModelLoading) {
+    return (
+      <Loader
+        appName={t("appName")}
+        label={t("loadingScreenTitle")}
+        processLabel={t("loadingScreenProcessLabel")}
+        currentProcess={localizedLoadingStage}
+        progress={modelLoadingProgress}
+        rotatingMessages={loadingHints}
+      />
+    );
+  }
+
   const currentSourceLanguageLabel =
     languageOptions.find((opt) => opt.value === sourceLanguage)?.label ?? "";
   const currentTargetLanguageLabel =

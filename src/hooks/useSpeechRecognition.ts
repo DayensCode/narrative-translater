@@ -81,6 +81,8 @@ async function resampleAudioTo16k(
 export function useSpeechRecognition(language: string) {
   const [isRecording, setIsRecording] = useState(false);
   const [isModelLoading, setIsModelLoading] = useState(true);
+  const [modelLoadingProgress, setModelLoadingProgress] = useState(0);
+  const [modelLoadingStage, setModelLoadingStage] = useState("Loading model");
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [partialTranscript, setPartialTranscript] = useState("");
@@ -112,7 +114,12 @@ export function useSpeechRecognition(language: string) {
     const handleMessage = (event: MessageEvent<WhisperResponse>) => {
       const data = event.data;
       if (data.type === "ready") {
+        setModelLoadingProgress(100);
+        setModelLoadingStage("Model ready");
         setIsModelLoading(false);
+      } else if (data.type === "loading-progress") {
+        setModelLoadingProgress((prev) => Math.max(prev, data.progress));
+        setModelLoadingStage(data.stage);
       } else if (data.type === "result") {
         setIsTranscribing(false);
         if (data.text) {
@@ -286,6 +293,8 @@ export function useSpeechRecognition(language: string) {
   return {
     isRecording,
     isModelLoading,
+    modelLoadingProgress,
+    modelLoadingStage,
     isTranscribing,
     transcript,
     setTranscript,
