@@ -43,6 +43,8 @@ type MainPageProps = {
   error: string | null;
   translationError: string | null;
   isRecording: boolean;
+  isTranscribing: boolean;
+  isTranslating: boolean;
   isSpeaking: boolean;
   canRecord: boolean;
   canSpeak: boolean;
@@ -89,6 +91,8 @@ export default function MainPage({
   error,
   translationError,
   isRecording,
+  isTranscribing,
+  isTranslating,
   isSpeaking,
   canRecord,
   canSpeak,
@@ -259,6 +263,10 @@ export default function MainPage({
         targetPlaceholder={targetPlaceholder}
         partialLabel={partialLabel}
         translationNote={translationNote}
+        isTranscribing={isTranscribing}
+        isTranslating={isTranslating}
+        transcribingLabel={t("statusTranscribing")}
+        translatingLabel={t("statusTranslating")}
       />
       {error ? <p className={styles.error}>{error}</p> : null}
       {translationError ? <p className={styles.error}>{translationError}</p> : null}

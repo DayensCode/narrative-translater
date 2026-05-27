@@ -13,6 +13,10 @@ type PanesProps = {
   targetPlaceholder: string;
   partialLabel: string;
   translationNote: string;
+  isTranscribing: boolean;
+  isTranslating: boolean;
+  transcribingLabel: string;
+  translatingLabel: string;
 };
 
 export function Panes({
@@ -28,6 +32,10 @@ export function Panes({
   targetPlaceholder,
   partialLabel,
   translationNote,
+  isTranscribing,
+  isTranslating,
+  transcribingLabel,
+  translatingLabel,
 }: PanesProps) {
   return (
     <section className={styles.workspaceGrid}>
@@ -55,6 +63,12 @@ export function Panes({
             <p>{partialTranscript}</p>
           </div>
         ) : null}
+        {isTranscribing ? (
+          <div className={styles.paneOverlay} role="status" aria-live="polite">
+            <span className={styles.paneSpinner} aria-hidden="true" />
+            <p className={styles.paneOverlayLabel}>{transcribingLabel}</p>
+          </div>
+        ) : null}
       </article>
 
       <article className={`${styles.pane} ${styles.paneTarget}`} data-tour-id="target-pane">
@@ -71,6 +85,12 @@ export function Panes({
         <div className={styles.paneNote} data-tour-id="translation-note">
           {translationNote}
         </div>
+        {isTranslating ? (
+          <div className={styles.paneOverlay} role="status" aria-live="polite">
+            <span className={styles.paneSpinner} aria-hidden="true" />
+            <p className={styles.paneOverlayLabel}>{translatingLabel}</p>
+          </div>
+        ) : null}
       </article>
     </section>
   );

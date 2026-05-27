@@ -29,6 +29,7 @@ function App() {
   const {
     isRecording,
     isModelLoading,
+    isTranscribing,
     transcript,
     setTranscript,
     partialTranscript,
@@ -114,13 +115,15 @@ function App() {
 
   const status = isRecording
     ? t("statusListening")
-    : isModelLoading
-      ? t("statusModelLoading")
-      : isTranslating
-        ? t("statusTranslating")
-        : isInstalled
-          ? t("statusInstalled")
-          : t("statusReady");
+    : isTranscribing
+      ? t("statusTranscribing")
+      : isModelLoading
+        ? t("statusModelLoading")
+        : isTranslating
+          ? t("statusTranslating")
+          : isInstalled
+            ? t("statusInstalled")
+            : t("statusReady");
 
   const activeUiLocale = normalizeUiLocale(i18n.resolvedLanguage ?? i18n.language) as UiLocale;
 
@@ -184,8 +187,10 @@ function App() {
               error={error}
               translationError={translationError}
               isRecording={isRecording}
+              isTranscribing={isTranscribing}
+              isTranslating={isTranslating}
               isSpeaking={isSpeaking}
-              canRecord={!isModelLoading}
+              canRecord={!isModelLoading && !isTranscribing}
               canSpeak={Boolean(translatedText || transcript)}
               listenLabel={t("listenAction")}
               stopListeningLabel={t("stopListeningAction")}
