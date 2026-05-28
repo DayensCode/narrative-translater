@@ -47,7 +47,11 @@ void i18n
     supportedLngs: UI_LOCALES,
     nonExplicitSupportedLngs: true,
     partialBundledLanguages: true,
-    interpolation: { escapeValue: false },
+    // React already escapes text nodes, but i18next interpolation can flow
+    // into <Trans components={…}> where React's protection does not apply.
+    // Keep escapeValue on so any future interpolation of user-controlled
+    // values is HTML-safe by default.
+    interpolation: { escapeValue: true },
     detection: {
       order: ["localStorage", "navigator", "htmlTag"],
       caches: ["localStorage"],

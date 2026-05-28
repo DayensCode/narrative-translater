@@ -29,6 +29,8 @@ type SettingsRouteProps = {
   selectedLanguageCodes: string[];
   onAddLanguage: (code: string) => void;
   onRemoveLanguage: (code: string) => void;
+  localTtsOnly: boolean;
+  onLocalTtsOnlyChange: (next: boolean) => void;
 };
 
 export default function SettingsRoute(props: SettingsRouteProps) {

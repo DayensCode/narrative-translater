@@ -115,11 +115,31 @@ const es = {
     onboardingSettingsSearchTitle: "Buscar y gestionar idiomas",
     onboardingSettingsSearchDescription:
     "Busca por nombre y añade o elimina idiomas de tu lista activa.",
+    onboardingSettingsPrivacyTitle: "Privacidad y voces locales",
+    onboardingSettingsPrivacyDescription:
+    "Esta sección mantiene la app privada. Activa el interruptor para usar solo voces locales y evitar que el texto salga del dispositivo hacia un TTS en la nube.",
+    onboardingSettingsWipeDataTitle: "Borrar todos los datos locales",
+    onboardingSettingsWipeDataDescription:
+    "Elimina preferencias, modelos en caché (~1,5 GB) y el Service Worker — un toque para no dejar rastro local de la sesión.",
     onboardingSettingsInstallTitle: "Instalar la app",
     onboardingSettingsInstallDescription:
     "Instala Narrative en tu dispositivo para acceso más rápido y mejor uso sin conexión.",
     onboardingTapHint: "Toca en cualquier parte para continuar",
     onboardingProgress: "Paso {{currentStep}} de {{totalSteps}}",
+    clearConfirm: "¿Borrar todo el texto reconocido y la traducción?",
+    privacy: "Privacidad",
+    localTtsOnly: "Usar solo voces locales del dispositivo",
+    localTtsOnlyDescription:
+    "Algunas voces del navegador envían el texto a un TTS en la nube. Cuando está activo, Narrative usa solo voces marcadas como locales.",
+    wipeData: "Borrar todos los datos",
+    wipeDataDescription:
+    "Elimina las preferencias guardadas, los modelos en caché y el estado del Service Worker. Después la app se recargará.",
+    wipeDataConfirm:
+    "Se eliminarán todos los datos guardados: preferencias, modelos en caché (~1,5 GB) y Service Worker. ¿Continuar?",
+    wipeDataDone: "Se eliminaron todos los datos locales.",
+    updateAvailableTitle: "Hay una nueva versión disponible",
+    updateAvailableAction: "Recargar",
+    updateAvailableLater: "Más tarde",
     languages: {
     ru: "Ruso",
     en: "Inglés",

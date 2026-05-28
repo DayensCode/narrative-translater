@@ -113,11 +113,31 @@ const en = {
     onboardingSettingsSearchTitle: "Search and manage languages",
     onboardingSettingsSearchDescription:
     "Search by language name and add or remove languages from your active list.",
+    onboardingSettingsPrivacyTitle: "Privacy & on-device voices",
+    onboardingSettingsPrivacyDescription:
+    "This section keeps the app private. Turn the switch on to use only on-device voices so text never leaves your device for cloud TTS.",
+    onboardingSettingsWipeDataTitle: "Wipe all local data",
+    onboardingSettingsWipeDataDescription:
+    "Removes preferences, cached models (~1.5 GB) and the service worker — a one-tap way to leave no local trace of the session.",
     onboardingSettingsInstallTitle: "Install the app",
     onboardingSettingsInstallDescription:
     "Install Narrative on your device for faster access and smoother offline use.",
     onboardingTapHint: "Tap anywhere to continue",
     onboardingProgress: "Step {{currentStep}} of {{totalSteps}}",
+    clearConfirm: "Clear all recognized speech and the translation?",
+    privacy: "Privacy",
+    localTtsOnly: "Use on-device voices only",
+    localTtsOnlyDescription:
+    "Some browser voices send text to a cloud TTS. When on, Narrative picks only voices marked as local.",
+    wipeData: "Wipe all data",
+    wipeDataDescription:
+    "Removes saved preferences, cached models, and service worker state. The app reloads afterwards.",
+    wipeDataConfirm:
+    "This will remove all saved data: preferences, cached models (~1.5 GB), and service worker. Continue?",
+    wipeDataDone: "All local data has been removed.",
+    updateAvailableTitle: "A new version is available",
+    updateAvailableAction: "Reload",
+    updateAvailableLater: "Later",
     languages: {
     ru: "Russian",
     en: "English",

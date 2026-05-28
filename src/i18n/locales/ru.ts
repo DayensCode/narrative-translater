@@ -112,11 +112,31 @@ const ru = {
     onboardingSettingsSearchTitle: "Поиск и управление языками",
     onboardingSettingsSearchDescription:
     "Ищите языки по названию и добавляйте или удаляйте их из активного списка.",
+    onboardingSettingsPrivacyTitle: "Приватность и локальные голоса",
+    onboardingSettingsPrivacyDescription:
+    "Эта секция отвечает за конфиденциальность. Включите тумблер, чтобы озвучка использовала только локальные голоса и текст не уходил в облачный TTS.",
+    onboardingSettingsWipeDataTitle: "Стереть все локальные данные",
+    onboardingSettingsWipeDataDescription:
+    "Удаляет настройки, кешированные модели (~1.5 ГБ) и Service Worker — один тап, чтобы не оставить локального следа сессии.",
     onboardingSettingsInstallTitle: "Установка приложения",
     onboardingSettingsInstallDescription:
     "Установите Narrative на устройство для быстрого запуска и удобной офлайн-работы.",
     onboardingTapHint: "Нажмите в любом месте, чтобы перейти дальше",
     onboardingProgress: "Шаг {{currentStep}} из {{totalSteps}}",
+    clearConfirm: "Удалить распознанный текст и перевод?",
+    privacy: "Приватность",
+    localTtsOnly: "Только локальные голоса озвучки",
+    localTtsOnlyDescription:
+    "Некоторые системные голоса отправляют текст в облако. Когда включено, Narrative использует только голоса, помеченные как локальные.",
+    wipeData: "Стереть все данные",
+    wipeDataDescription:
+    "Удаляет настройки, кешированные модели и данные Service Worker. После этого приложение перезагрузится.",
+    wipeDataConfirm:
+    "Будут удалены все сохранённые данные: настройки, кешированные модели (~1.5 ГБ) и Service Worker. Продолжить?",
+    wipeDataDone: "Все локальные данные удалены.",
+    updateAvailableTitle: "Доступна новая версия",
+    updateAvailableAction: "Обновить",
+    updateAvailableLater: "Позже",
     languages: {
     ru: "Русский",
     en: "English",

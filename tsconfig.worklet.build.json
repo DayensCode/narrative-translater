@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.worklet.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worklet.build.tsbuildinfo",
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "removeComments": false,
+    "outDir": "./public",
+    "rootDir": "./src/workers",
+    "isolatedModules": false,
+    "verbatimModuleSyntax": false,
+    "allowImportingTsExtensions": false,
+    "incremental": false,
+    "moduleDetection": "auto"
+  },
+  "references": [],
+  "include": ["src/workers/audio-capture.worklet.ts"]
+}

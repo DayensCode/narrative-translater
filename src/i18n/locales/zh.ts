@@ -109,11 +109,31 @@ const zh = {
     onboardingSettingsSearchTitle: "搜索并管理语言",
     onboardingSettingsSearchDescription:
     "按名称搜索语言，并加入或移出当前列表。",
+    onboardingSettingsPrivacyTitle: "隐私与本地语音",
+    onboardingSettingsPrivacyDescription:
+    "此部分用于保护隐私。开启开关后，朗读仅使用设备本地语音，不会将文本发送到云端 TTS。",
+    onboardingSettingsWipeDataTitle: "清除所有本地数据",
+    onboardingSettingsWipeDataDescription:
+    "删除偏好、缓存的模型（约 1.5 GB）和 Service Worker——一键清理，让本次会话不留下任何本地痕迹。",
     onboardingSettingsInstallTitle: "安装应用",
     onboardingSettingsInstallDescription:
     "将 Narrative 安装到设备，获得更快启动和更顺畅离线体验。",
     onboardingTapHint: "点击任意位置继续",
     onboardingProgress: "第 {{currentStep}} 步，共 {{totalSteps}} 步",
+    clearConfirm: "清空所有已识别的语音和翻译？",
+    privacy: "隐私",
+    localTtsOnly: "仅使用设备本地语音",
+    localTtsOnlyDescription:
+    "部分浏览器语音会将文本发送到云端 TTS。开启后，Narrative 仅使用标记为本地的语音。",
+    wipeData: "清除所有数据",
+    wipeDataDescription:
+    "删除已保存的偏好、缓存模型和 Service Worker 状态。操作后应用会自动重新加载。",
+    wipeDataConfirm:
+    "将删除所有已保存的数据：偏好、缓存模型（约 1.5 GB）和 Service Worker。是否继续？",
+    wipeDataDone: "所有本地数据已被清除。",
+    updateAvailableTitle: "有新版本可用",
+    updateAvailableAction: "重新加载",
+    updateAvailableLater: "稍后",
     languages: {
     ru: "俄语",
     en: "英语",

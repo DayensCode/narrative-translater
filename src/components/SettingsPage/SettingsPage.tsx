@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { ArrowLeft, Plus, X } from "lucide-react";
+import { useTranslation as useI18nTranslation } from "react-i18next";
 import type { ThemeMode } from "../../hooks/useTheme";
 import type { UiLocale } from "../../i18n";
 import { getLocalizedLanguageName, NLLB_LANGUAGES } from "../../nllb-languages";
+import { wipeLocalData } from "../../utils/wipe-data";
 import styles from "./styles.module.css";
 
 type Option<T extends string> = { value: T; label: string };
@@ -26,6 +28,8 @@ type SettingsPageProps = {
   selectedLanguageCodes: string[];
   onAddLanguage: (code: string) => void;
   onRemoveLanguage: (code: string) => void;
+  localTtsOnly: boolean;
+  onLocalTtsOnlyChange: (next: boolean) => void;
 };
 
 export function SettingsPage({
@@ -47,8 +51,26 @@ export function SettingsPage({
   selectedLanguageCodes,
   onAddLanguage,
   onRemoveLanguage,
+  localTtsOnly,
+  onLocalTtsOnlyChange,
 }: SettingsPageProps) {
+  const { t } = useI18nTranslation();
   const [query, setQuery] = useState("");
+  const [isWiping, setIsWiping] = useState(false);
+
+  const handleWipe = async () => {
+    const confirmed = window.confirm(
+      t("wipeDataConfirm", {
+        defaultValue:
+          "This will remove all saved data: preferences, cached models (~1.5 GB), and service worker. Continue?",
+      }),
+    );
+    if (!confirmed) return;
+    setIsWiping(true);
+    await wipeLocalData();
+    // Hard reload so React re-mounts against a clean storage surface.
+    window.location.reload();
+  };
 
   const q = query.trim().toLowerCase();
   const filteredLanguages = q.length > 0
@@ -182,6 +204,49 @@ export function SettingsPage({
             </button>
           </div>
         )}
+
+        <div className={styles.field} data-tour-id="settings-privacy-field">
+          <span>{t("privacy", { defaultValue: "Privacy" })}</span>
+
+          <div className={styles.fieldRow} data-tour-id="settings-local-tts-toggle">
+            <div>
+              <div>
+                {t("localTtsOnly", {
+                  defaultValue: "Use on-device voices only",
+                })}
+              </div>
+              <div className={styles.fieldDescription}>
+                {t("localTtsOnlyDescription", {
+                  defaultValue:
+                    "Some browser voices send text to a cloud TTS. When on, Narrative picks only voices marked as local.",
+                })}
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={localTtsOnly}
+              className={`${styles.toggle} ${localTtsOnly ? styles.active : ""}`}
+              onClick={() => onLocalTtsOnlyChange(!localTtsOnly)}
+            />
+          </div>
+
+          <div className={styles.fieldDescription}>
+            {t("wipeDataDescription", {
+              defaultValue:
+                "Removes saved preferences, cached models, and service worker state. The app reloads afterwards.",
+            })}
+          </div>
+          <button
+            type="button"
+            className={styles.dangerBtn}
+            onClick={handleWipe}
+            disabled={isWiping}
+            data-tour-id="settings-wipe-data-button"
+          >
+            {t("wipeData", { defaultValue: "Wipe all data" })}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -115,11 +115,31 @@ const fr = {
     onboardingSettingsSearchTitle: "Rechercher et gérer les langues",
     onboardingSettingsSearchDescription:
     "Recherchez par nom puis ajoutez ou retirez des langues de votre liste active.",
+    onboardingSettingsPrivacyTitle: "Confidentialité et voix locales",
+    onboardingSettingsPrivacyDescription:
+    "Cette section garde l’app privée. Activez l’interrupteur pour n’utiliser que les voix locales et empêcher l’envoi du texte vers un TTS cloud.",
+    onboardingSettingsWipeDataTitle: "Effacer toutes les données locales",
+    onboardingSettingsWipeDataDescription:
+    "Supprime préférences, modèles en cache (~1,5 Go) et Service Worker — un geste pour ne laisser aucune trace locale de la session.",
     onboardingSettingsInstallTitle: "Installer l’application",
     onboardingSettingsInstallDescription:
     "Installez Narrative sur votre appareil pour un accès plus rapide et un meilleur usage hors ligne.",
     onboardingTapHint: "Touchez n’importe où pour continuer",
     onboardingProgress: "Étape {{currentStep}} sur {{totalSteps}}",
+    clearConfirm: "Effacer tout le texte reconnu et la traduction ?",
+    privacy: "Confidentialité",
+    localTtsOnly: "Utiliser uniquement les voix locales",
+    localTtsOnlyDescription:
+    "Certaines voix du navigateur envoient le texte à un TTS cloud. Lorsque cette option est active, Narrative n’utilise que les voix marquées comme locales.",
+    wipeData: "Effacer toutes les données",
+    wipeDataDescription:
+    "Supprime les préférences enregistrées, les modèles mis en cache et l’état du Service Worker. L’application se recharge ensuite.",
+    wipeDataConfirm:
+    "Toutes les données enregistrées seront supprimées : préférences, modèles en cache (~1,5 Go) et Service Worker. Continuer ?",
+    wipeDataDone: "Toutes les données locales ont été supprimées.",
+    updateAvailableTitle: "Une nouvelle version est disponible",
+    updateAvailableAction: "Recharger",
+    updateAvailableLater: "Plus tard",
     languages: {
     ru: "Russe",
     en: "Anglais",

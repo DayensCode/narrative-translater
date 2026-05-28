@@ -62,6 +62,7 @@ src/
 - [Компоненты](./docs/components.md)
 - [Типы](./docs/types.md)
 - [Воркеры](./docs/workers.md)
+- [Безопасность](./docs/security.md)
 
 ## Инварианты проекта
 
@@ -77,6 +78,32 @@ src/
   записью в `loaders` внутри `src/i18n/index.ts`.
 - При правках документации ориентируйся на реальный код, а не на старые
   описания.
+
+## Security-инварианты
+
+- `HashRouter` (не `BrowserRouter`): всё после `#` не попадает в access-логи
+  origin-сервера. Это осознанное решение для confidential-использования,
+  менять только после пересмотра последствий.
+- HF-модели (`whisper-small`, `nllb-200-distilled-600M`) пиннятся к
+  конкретному commit SHA в `workers/whisper.worker.ts` и
+  `workers/translate.worker.ts`. При bump-е версии — обновлять SHA и
+  проводить повторный аудит того, что скачивается.
+- CSP, Permissions-Policy и `X-Content-Type-Options: nosniff` объявлены в
+  `index.html` через `<meta>`. Любой новый внешний хост (аналитика, fonts,
+  CDN) должен либо попасть в `connect-src`, либо быть self-hosted.
+- `registerType: "prompt"` в `vite.config.ts`: новый SW не ставится без
+  подтверждения пользователя (защита installed клиентов от скомпрометированной
+  сборки). Не переключать на `autoUpdate` без отдельного обсуждения.
+- `cacheableResponse.statuses = [200]` для HF-кеша: не кешируем opaque-ответы,
+  чтобы MITM-подмена на первом скачивании не осела в кеше на 30 дней.
+- TTS по умолчанию использует только `voice.localService === true` (см.
+  `useSpeechSynthesis`). Это обещание «текст не уходит с устройства» —
+  переключается из Settings, но дефолт всегда `true`.
+- Внешние ссылки (`<a target="_blank">`) — только с `rel="noopener noreferrer"`;
+  ESLint-правило в `eslint.config.js` следит.
+- Секретов в `localStorage` нет и быть не должно — там только UI-преференсы.
+- Dev-сервер биндится на `127.0.0.1`, не `0.0.0.0`; при необходимости LAN
+  использовать `vite --host` явно.
 
 ## Команды
 

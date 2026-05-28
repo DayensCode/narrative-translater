@@ -112,11 +112,31 @@ const ar = {
     onboardingSettingsSearchTitle: "البحث وإدارة اللغات",
     onboardingSettingsSearchDescription:
     "ابحث بالاسم ثم أضف اللغات إلى قائمتك النشطة أو احذفها.",
+    onboardingSettingsPrivacyTitle: "الخصوصية والأصوات المحلية",
+    onboardingSettingsPrivacyDescription:
+    "يحافظ هذا القسم على خصوصية التطبيق. فعّل المفتاح لاستخدام الأصوات المحلية فقط ومنع إرسال النص إلى خدمات TTS السحابية.",
+    onboardingSettingsWipeDataTitle: "مسح جميع البيانات المحلية",
+    onboardingSettingsWipeDataDescription:
+    "يحذف التفضيلات والنماذج المخبّأة (~1.5 غيغابايت) وService Worker — بضغطة واحدة لا يبقى أي أثر محلي للجلسة.",
     onboardingSettingsInstallTitle: "تثبيت التطبيق",
     onboardingSettingsInstallDescription:
     "ثبّت Narrative على جهازك للوصول الأسرع وتجربة أوفلاين أكثر سلاسة.",
     onboardingTapHint: "انقر في أي مكان للمتابعة",
     onboardingProgress: "الخطوة {{currentStep}} من {{totalSteps}}",
+    clearConfirm: "مسح كل الكلام المتعرّف عليه والترجمة؟",
+    privacy: "الخصوصية",
+    localTtsOnly: "استخدام الأصوات المحلية للجهاز فقط",
+    localTtsOnlyDescription:
+    "ترسل بعض أصوات المتصفح النص إلى خدمة TTS سحابية. عند التفعيل يستخدم Narrative فقط الأصوات المُحدَّدة كمحلية.",
+    wipeData: "مسح جميع البيانات",
+    wipeDataDescription:
+    "يحذف التفضيلات المحفوظة والنماذج المخبّأة وحالة Service Worker. يُعاد تحميل التطبيق بعد ذلك.",
+    wipeDataConfirm:
+    "سيتم حذف كل البيانات المحفوظة: التفضيلات، النماذج المخبّأة (~1.5 غيغابايت)، وService Worker. هل تريد المتابعة؟",
+    wipeDataDone: "تم حذف جميع البيانات المحلية.",
+    updateAvailableTitle: "إصدار جديد متاح",
+    updateAvailableAction: "إعادة التحميل",
+    updateAvailableLater: "لاحقًا",
     languages: {
     ru: "الروسية",
     en: "الإنجليزية",

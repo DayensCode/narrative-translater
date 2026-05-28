@@ -2,6 +2,9 @@ import type { WhisperRequest, WhisperResponse } from "../types";
 import { createHfPipeline, type LoaderProgressInfo } from "./_hf";
 
 const WHISPER_MODEL = "Xenova/whisper-small";
+// Pinned to a specific HF revision so the weights we download match what we
+// audited. Update deliberately (and re-audit) when bumping.
+const WHISPER_REVISION = "2d67713f236afa48a18992566e7647f6ca848e13";
 
 type ASRCallOptions = {
   language?: string;
@@ -63,6 +66,7 @@ async function getASR(): Promise<ASRPipeline> {
 
   pipelinePromise = createHfPipeline("automatic-speech-recognition", WHISPER_MODEL, {
     progressCallback: emitLoadingProgress,
+    revision: WHISPER_REVISION,
   }) as Promise<ASRPipeline>;
 
   return pipelinePromise;

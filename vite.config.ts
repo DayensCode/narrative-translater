@@ -19,13 +19,16 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,
+    // Loopback only. Binding to 0.0.0.0 on a shared Wi-Fi exposes an
+    // in-progress session (microphone gated by origin, but UI state is not).
+    // Override with `--host` explicitly when LAN/device testing is needed.
+    host: "127.0.0.1",
     port: 5173,
     strictPort: true,
     allowedHosts: [".localhost"],
   },
   preview: {
-    host: true,
+    host: "127.0.0.1",
     port: 4173,
     strictPort: true,
     allowedHosts: [".localhost"],
@@ -38,8 +41,18 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["favicon.ico"],
+      // Explicit opt-in: we prompt the user before replacing the installed SW
+      // instead of silently auto-updating. A compromised build would otherwise
+      // propagate to every installed client without any detection window.
+      registerType: "prompt",
+      includeAssets: [
+        "favicon.ico",
+        "favicon-16x16.png",
+        "favicon-32x32.png",
+        "apple-touch-icon.png",
+        "android-chrome-192x192.png",
+        "android-chrome-512x512.png",
+      ],
       devOptions: {
         enabled: false,
       },
@@ -50,6 +63,10 @@ export default defineConfig({
         navigationPreload: true,
         runtimeCaching: [
           {
+            // Only cache successful CORS responses (status 200). Opaque
+            // responses (status 0) could be silently-substituted by an
+            // on-path attacker during first download — we'd rather fail
+            // loudly and re-fetch than persist tampered model weights.
             urlPattern:
               /^https:\/\/(huggingface\.co|cdn-lfs\.huggingface\.co|hf\.co)\/.*/i,
             handler: "CacheFirst",
@@ -60,7 +77,7 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 30,
               },
               cacheableResponse: {
-                statuses: [0, 200],
+                statuses: [200],
               },
             },
           },
@@ -74,7 +91,7 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 30,
               },
               cacheableResponse: {
-                statuses: [0, 200],
+                statuses: [200],
               },
             },
           },
@@ -91,13 +108,13 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "/icon-192.png",
+            src: "/android-chrome-192x192.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "/icon-512.png",
+            src: "/android-chrome-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
@@ -105,14 +122,14 @@ export default defineConfig({
         ],
         screenshots: [
           {
-            src: "/icon-512.png",
+            src: "/android-chrome-512x512.png",
             sizes: "512x512",
             type: "image/png",
             form_factor: "wide",
             label: "Narrative",
           },
           {
-            src: "/icon-512.png",
+            src: "/android-chrome-512x512.png",
             sizes: "512x512",
             type: "image/png",
             form_factor: "narrow",

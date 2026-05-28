@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation as useI18nTranslation } from "react-i18next";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Loader } from "./components/Loader";
+import { UpdateBanner } from "./components/UpdateBanner";
 
 import { usePWAInstall } from "./hooks/usePWAInstall";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
@@ -49,7 +50,13 @@ function App() {
   const { isTranslating, translatedText, translationError, translate, clearTranslation } =
     useTranslation();
 
-  const { isSpeaking, speak, stop: stopSpeaking } = useSpeechSynthesis();
+  const {
+    isSpeaking,
+    speak,
+    stop: stopSpeaking,
+    localOnly: localTtsOnly,
+    setLocalOnly: setLocalTtsOnly,
+  } = useSpeechSynthesis();
   const { isInstalled, isInstallAvailable, install } = usePWAInstall();
 
   useEffect(() => {
@@ -72,9 +79,20 @@ function App() {
   }, [selectedLanguages, sourceLanguage, targetLanguage]);
 
   const clearAll = useCallback(() => {
+    // Irreversible data loss on a single tap is too aggressive for a
+    // confidential-use app. Guard with a native confirm (localized).
+    const hasContent = Boolean(transcript || partialTranscript || translatedText);
+    if (hasContent) {
+      const confirmed = window.confirm(
+        t("clearConfirm", {
+          defaultValue: "Clear all recognized speech and the translation?",
+        }),
+      );
+      if (!confirmed) return;
+    }
     clearTranscript();
     clearTranslation();
-  }, [clearTranscript, clearTranslation]);
+  }, [clearTranscript, clearTranslation, t, transcript, partialTranscript, translatedText]);
 
   useEffect(() => {
     if (prevSourceLanguageRef.current !== sourceLanguage) {
@@ -212,7 +230,9 @@ function App() {
     languageOptions.find((opt) => opt.value === targetLanguage)?.label ?? "";
 
   return (
-    <Routes>
+    <>
+      <UpdateBanner />
+      <Routes>
       <Route
         path="/"
         element={
@@ -290,12 +310,15 @@ function App() {
               selectedLanguageCodes={selectedLanguageCodes}
               onAddLanguage={addLanguage}
               onRemoveLanguage={removeLanguage}
+              localTtsOnly={localTtsOnly}
+              onLocalTtsOnlyChange={setLocalTtsOnly}
             />
           </Suspense>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 

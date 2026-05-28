@@ -18,7 +18,11 @@ const FRAMES_PER_BATCH = 16;
 const FRAME_SIZE = 128;
 const BATCH_SAMPLES = FRAMES_PER_BATCH * FRAME_SIZE;
 
-export type AudioCaptureMessage = {
+// Kept local to the worklet. The main-thread side maintains a structurally
+// identical `AudioCaptureMessage` in `useSpeechRecognition.ts`. Crossing the
+// AudioWorklet boundary copies values via `postMessage`, so the two type
+// declarations only need to agree on shape, not on identity.
+type AudioCaptureMessage = {
   samples: Float32Array;
   rms: number;
 };

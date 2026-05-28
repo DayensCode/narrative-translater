@@ -203,8 +203,12 @@ export function useSpeechRecognition(language: string) {
       audioContextRef.current = ctx;
     }
     if (!workletReadyRef.current) {
+      // Loaded from /public as a precompiled JS asset. Going through
+      // `new URL("./worklet.ts", import.meta.url)` makes Vite inline the file
+      // as a `data:` URI, which (a) violates `script-src 'self'` and (b) ships
+      // raw TypeScript that AudioWorkletGlobalScope cannot parse.
       await ctx.audioWorklet.addModule(
-        new URL("../workers/audio-capture.worklet.ts", import.meta.url),
+        `${import.meta.env.BASE_URL}audio-capture.worklet.js`,
       );
       workletReadyRef.current = true;
     }

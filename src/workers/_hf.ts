@@ -8,6 +8,13 @@ export type LoaderProgressInfo = {
 
 export type HfPipelineOptions = {
   progressCallback?: (info: LoaderProgressInfo) => void;
+  /**
+   * Pin a specific HF revision (commit sha / branch / tag). Without this the
+   * hub resolves to `main`, which can silently move underneath us — a
+   * non-starter for a confidential build where we want the model bytes to
+   * match what we audited.
+   */
+  revision?: string;
 };
 
 /**
@@ -82,5 +89,6 @@ export async function createHfPipeline(
   return await pipeline(task, model, {
     dtype,
     progress_callback: options.progressCallback,
+    revision: options.revision,
   });
 }

@@ -7,6 +7,8 @@ import {
 import { createHfPipeline } from "./_hf";
 
 const NLLB_MODEL = "Xenova/nllb-200-distilled-600M";
+// Pinned HF revision (see whisper.worker.ts for rationale).
+const NLLB_REVISION = "261c31d1a5732c67cdd16d80e8d6088507c7ccea";
 
 type TranslatorCallOptions = {
   src_lang: string;
@@ -24,7 +26,9 @@ let translatorPromise: Promise<TranslatorFn> | null = null;
 
 async function getTranslator(): Promise<TranslatorFn> {
   if (translatorPromise) return translatorPromise;
-  translatorPromise = createHfPipeline("translation", NLLB_MODEL) as Promise<TranslatorFn>;
+  translatorPromise = createHfPipeline("translation", NLLB_MODEL, {
+    revision: NLLB_REVISION,
+  }) as Promise<TranslatorFn>;
   return translatorPromise;
 }
 

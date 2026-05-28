@@ -19,5 +19,19 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Flag every <a target="_blank"> so the author has to consciously pair
+      // it with rel="noopener noreferrer" (or disable the rule with a
+      // comment after verifying it). Prevents reverse tabnabbing.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "JSXAttribute[name.name='target'][value.value='_blank']",
+          message:
+            'target="_blank" must be paired with rel="noopener noreferrer" — disable this rule inline only after adding rel.',
+        },
+      ],
+    },
   },
 ]);

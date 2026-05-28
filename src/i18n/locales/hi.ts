@@ -112,11 +112,31 @@ const hi = {
     onboardingSettingsSearchTitle: "भाषाएँ खोजें और प्रबंधित करें",
     onboardingSettingsSearchDescription:
     "नाम से भाषा खोजें और उन्हें सक्रिय सूची में जोड़ें या हटाएँ।",
+    onboardingSettingsPrivacyTitle: "गोपनीयता और डिवाइस वॉइस",
+    onboardingSettingsPrivacyDescription:
+    "यह खंड ऐप को निजी रखता है। टॉगल चालू करने पर केवल डिवाइस की लोकल वॉइस का उपयोग होगा और टेक्स्ट क्लाउड TTS पर नहीं भेजा जाएगा।",
+    onboardingSettingsWipeDataTitle: "सभी लोकल डेटा मिटाएँ",
+    onboardingSettingsWipeDataDescription:
+    "प्राथमिकताएँ, कैश्ड मॉडल (~1.5 GB) और Service Worker हटाता है — एक टैप में सेशन का कोई लोकल निशान नहीं रहेगा।",
     onboardingSettingsInstallTitle: "ऐप इंस्टॉल करें",
     onboardingSettingsInstallDescription:
     "तेज़ पहुँच और बेहतर ऑफलाइन उपयोग के लिए Narrative को डिवाइस पर इंस्टॉल करें।",
     onboardingTapHint: "आगे बढ़ने के लिए कहीं भी टैप करें",
     onboardingProgress: "चरण {{currentStep}} / {{totalSteps}}",
+    clearConfirm: "पहचाने गए भाषण और अनुवाद को साफ़ करें?",
+    privacy: "गोपनीयता",
+    localTtsOnly: "केवल डिवाइस पर मौजूद वॉइस का उपयोग करें",
+    localTtsOnlyDescription:
+    "कुछ ब्राउज़र वॉइस टेक्स्ट को क्लाउड TTS पर भेजते हैं। सक्षम होने पर Narrative केवल लोकल के रूप में चिह्नित वॉइस का उपयोग करता है।",
+    wipeData: "सारा डेटा मिटाएँ",
+    wipeDataDescription:
+    "सहेजी गई प्राथमिकताएँ, कैश्ड मॉडल और Service Worker स्थिति हटाता है। इसके बाद ऐप पुनः लोड हो जाता है।",
+    wipeDataConfirm:
+    "सभी सहेजा गया डेटा हटाया जाएगा: प्राथमिकताएँ, कैश्ड मॉडल (~1.5 GB) और Service Worker। जारी रखें?",
+    wipeDataDone: "सभी लोकल डेटा हटा दिया गया है।",
+    updateAvailableTitle: "नया संस्करण उपलब्ध है",
+    updateAvailableAction: "फिर से लोड करें",
+    updateAvailableLater: "बाद में",
     languages: {
     ru: "रूसी",
     en: "अंग्रेज़ी",

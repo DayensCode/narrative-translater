@@ -2,7 +2,41 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+        <!--
+          Strict Content-Security-Policy. Narrative has no backend, so the app
+          only needs to talk to its own origin (for SW / bundles), to Hugging
+          Face for model downloads, and to the TTS engine exposed by the OS
+          (which is not a network target). Inline <script> is forbidden —
+          the anti-flash boot lives in /theme-boot.js. 'unsafe-inline' on
+          style-src is required by CSS Modules / vite-injected <style>.
+
+          The full security header set (frame-ancestors, Permissions-Policy,
+          X-Content-Type-Options, HSTS, COOP, etc.) is delivered as HTTP
+          headers in vercel.json. Several of those directives — notably
+          frame-ancestors, Permissions-Policy, and X-Content-Type-Options —
+          are silently ignored when delivered via <meta>, so we don't repeat
+          them here. The meta CSP below is a dev/preview safety net that
+          matches the production header on directives that do work in <meta>.
+        -->
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://huggingface.co https://cdn-lfs.huggingface.co https://hf.co https://cdn.jsdelivr.net; media-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"
+        />
+        <meta name="referrer" content="no-referrer" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon-32x32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/favicon-16x16.png"
+        />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta
             name="description"
@@ -10,25 +44,7 @@
         />
         <meta name="theme-color" content="#f3efe6" />
         <title>Narrative</title>
-        <script>
-            // Anti-flash: applies the right theme before React mounts.
-            (function () {
-                try {
-                    var saved = localStorage.getItem("narrative-theme");
-                    var system = window.matchMedia(
-                        "(prefers-color-scheme: dark)",
-                    ).matches
-                        ? "dark"
-                        : "light";
-                    var resolved =
-                        saved === "dark" || saved === "light" ? saved : system;
-                    document.documentElement.dataset.theme = resolved;
-                    document.documentElement.style.colorScheme = resolved;
-                } catch (e) {
-                    // Private mode / disabled storage — fall back to CSS default.
-                }
-            })();
-        </script>
+        <script src="/theme-boot.js"></script>
     </head>
     <body>
         <div id="root"></div>

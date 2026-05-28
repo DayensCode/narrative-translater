@@ -55,6 +55,26 @@ export function buildSettingsOnboardingSteps(
         defaultValue: "Search by language name and add or remove languages from your active list.",
       }),
     },
+    {
+      selector: '[data-tour-id="settings-local-tts-toggle"]',
+      title: t("onboardingSettingsPrivacyTitle", {
+        defaultValue: "Privacy & on-device voices",
+      }),
+      description: t("onboardingSettingsPrivacyDescription", {
+        defaultValue:
+          "This section keeps the app private. Turn the switch on to use only on-device voices so text never leaves your device for cloud TTS.",
+      }),
+    },
+    {
+      selector: '[data-tour-id="settings-wipe-data-button"]',
+      title: t("onboardingSettingsWipeDataTitle", {
+        defaultValue: "Wipe all local data",
+      }),
+      description: t("onboardingSettingsWipeDataDescription", {
+        defaultValue:
+          "Removes preferences, cached models (~1.5 GB) and the service worker — a one-tap way to leave no local trace of the session.",
+      }),
+    },
   ];
 
   if (isInstallAvailable || isInstalled) {

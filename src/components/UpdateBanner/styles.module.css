@@ -1,0 +1,57 @@
+.banner {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-elevated);
+    backdrop-filter: blur(18px);
+    color: var(--text);
+    font-size: 0.9rem;
+    max-width: calc(100vw - 2rem);
+}
+
+.banner-label {
+    padding-left: 0.4rem;
+}
+
+.banner-actions {
+    display: inline-flex;
+    gap: 0.4rem;
+}
+
+.banner-ghost {
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-soft);
+    cursor: pointer;
+    font: inherit;
+}
+
+.banner-ghost:hover {
+    color: var(--text);
+}
+
+.banner-primary {
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: var(--text-on-accent);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+}
+
+.banner-primary:hover {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+}

@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "npm run build:worklet && vite",
+    "build:worklet": "tsc -p tsconfig.worklet.build.json",
+    "build": "npm run build:worklet && tsc -b && vite build",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
@@ -15,6 +16,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/roboto": "^5.2.10",
     "@huggingface/transformers": "3.8.1",
     "i18next": "26.0.6",
     "i18next-browser-languagedetector": "8.2.1",
@@ -25,7 +27,9 @@
     "react-router-dom": "7.14.1"
   },
   "overrides": {
-    "rollup": "4.60.2"
+    "rollup": "4.60.2",
+    "serialize-javascript": "7.0.5",
+    "minimatch": "10.2.5"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

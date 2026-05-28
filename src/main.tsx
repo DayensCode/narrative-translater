@@ -1,18 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
-import { registerSW } from "virtual:pwa-register";
 import { i18nReady } from "./i18n";
 import "./index.css";
 import App from "./App.tsx";
 
-// Service worker registration can throw in private browsing / disabled SW
-// contexts. Never let that crash bootstrap.
-try {
-  registerSW({ immediate: true });
-} catch (err) {
-  console.warn("Service worker registration failed:", err);
-}
+// Service worker registration is owned by <UpdateBanner>, which uses
+// `registerType: "prompt"` so users explicitly consent to replacing the
+// installed SW (protects installed clients from a compromised build).
 
 // Ask for persistent storage so the browser keeps our ~1.5 GB of model
 // weights across eviction cycles. Fire-and-forget — users can decline.
