@@ -2,7 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { BeforeInstallPromptEvent } from "../types";
 
 export function usePWAInstall() {
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.matchMedia("(display-mode: standalone)").matches;
+    } catch {
+      return false;
+    }
+  });
   const [isInstallAvailable, setIsInstallAvailable] = useState(false);
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
@@ -21,10 +28,6 @@ export function usePWAInstall() {
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     window.addEventListener("appinstalled", onAppInstalled);
-
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
-    }
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);

@@ -1,16 +1,43 @@
 # Типы
 
-## Правила
+Общие типы собраны в `src/types/index.ts`. Они описывают контракт между
+UI-потоком и воркерами.
 
-- Shared-типы между main thread и worker лежат в `src/types/index.ts`.
-- Локальные props и view-specific типы объявляются рядом с компонентом или страницей.
-- Для сообщений воркера используется discriminated union по полю `action`.
+## Whisper worker
 
-## Shared types
+```ts
+type WhisperRequest =
+  | { type: "warmup" }
+  | {
+      type: "transcribe";
+      audio: Float32Array;
+      language: string | undefined;
+      sampleRate: number;
+    };
 
-Файл: `src/types/index.ts`
+type WhisperLoadingStatus = "initiate" | "download" | "progress" | "done" | "ready";
 
-### TranslationRequest
+type WhisperResponse =
+  | { type: "ready" }
+  | {
+      type: "loading-progress";
+      progress: number;
+      stage: string;
+      status: WhisperLoadingStatus;
+      file?: string;
+    }
+  | { type: "result"; text: string }
+  | { type: "error"; message: string };
+```
+
+- `warmup` прогревает пайплайн без распознавания.
+- `transcribe` передаёт уже 16 kHz Float32Array; main thread сам ресемплирует
+  при необходимости.
+- `loading-progress` приходит во время скачивания/инициализации модели;
+  `progress` — 0..1, `stage` — человекочитаемая подпись.
+- `result.text` — полная строка (не чанки).
+
+## Translation worker
 
 ```ts
 type TranslationRequest =
@@ -22,16 +49,7 @@ type TranslationRequest =
       sourceLanguage: string;
       targetLanguage: string;
     };
-```
 
-Назначение:
-
-- `warmup` прогревает translation worker без текста
-- `translate` несёт текст и выбранную языковую пару
-
-### TranslationResponse
-
-```ts
 type TranslationResponse = {
   id: number;
   action: "warmup" | "translate";
@@ -40,13 +58,13 @@ type TranslationResponse = {
 };
 ```
 
-Назначение:
+- `id` генерируется в `useTranslation` и используется для отсечения
+  устаревших ответов.
+- `sourceLanguage` / `targetLanguage` — NLLB-коды (`eng_Latn`, `rus_Cyrl`…).
+- Воркер режет входной текст на чанки по `MAX_CHUNK_CHARS`, переводит одним
+  батчем и возвращает склеенную строку в `translatedText`.
 
-- `id` позволяет отбросить устаревшие ответы
-- `translatedText` всегда присутствует, даже если это пустая строка
-- `error` передаёт ошибку warmup или перевода
-
-### BeforeInstallPromptEvent
+## PWA install
 
 ```ts
 type BeforeInstallPromptEvent = Event & {
@@ -58,27 +76,4 @@ type BeforeInstallPromptEvent = Event & {
 };
 ```
 
-Назначение:
-
-Нужен для типизации нестандартного browser event `beforeinstallprompt`, который используется в `usePWAInstall`.
-
-## Константы
-
-Файл: `src/config.ts`
-
-### Audio
-
-| Константа | Значение | Описание |
-|-----------|----------|----------|
-| `AUDIO_SAMPLE_RATE` | `16000` | Желаемая частота при запросе микрофона |
-| `SILENCE_TIMEOUT_MS` | `2500` | Порог автоостановки по тишине |
-| `VOICE_ACTIVITY_THRESHOLD` | `0.01` | RMS-порог для простого VAD |
-
-### Translation
-
-| Константа | Значение | Описание |
-|-----------|----------|----------|
-| `TRANSLATION_DEBOUNCE_MS` | `500` | Задержка перед отправкой текста в воркер |
-| `MAX_CHUNK_CHARS` | `220` | Максимальный размер одного translation chunk |
-| `TRANSLATION_MAX_NEW_TOKENS` | `384` | Лимит генерации для pipeline |
-| `TRANSLATION_NUM_BEAMS` | `4` | Параметр beam search |
+Используется в `usePWAInstall` для типизации нативного события установки.

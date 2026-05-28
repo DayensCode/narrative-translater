@@ -75,19 +75,28 @@ export function OnboardingOverlay({
       return;
     }
 
+    let rafId = 0;
     const update = () => {
+      rafId = 0;
       setViewport({ width: window.innerWidth, height: window.innerHeight });
       setCurrentRect(resolveRect(currentStep.selector));
+    };
+    const schedule = () => {
+      if (rafId !== 0) return;
+      rafId = window.requestAnimationFrame(update);
     };
 
     update();
 
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, true);
+    // Passive scroll listener + rAF throttle: we avoid blocking scroll and
+    // collapse multiple events into a single layout read per frame.
+    window.addEventListener("resize", schedule);
+    window.addEventListener("scroll", schedule, { capture: true, passive: true });
 
     return () => {
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
+      if (rafId !== 0) cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule, { capture: true });
     };
   }, [currentStep?.selector]);
 

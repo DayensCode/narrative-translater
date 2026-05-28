@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation as useI18nTranslation } from "react-i18next";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Loader } from "./components/Loader";
@@ -10,11 +10,14 @@ import { type ThemeMode, useTheme } from "./hooks/useTheme";
 import { useTranslation } from "./hooks/useTranslation";
 import { useLanguageList } from "./hooks/useLanguageList";
 import { i18n, type UiLocale, UI_LOCALES } from "./i18n";
-import { getLocalizedLanguageName, getNllbSpeechLocale } from "./nllb-languages";
+import {
+  DEFAULT_SOURCE_LANGUAGE,
+  DEFAULT_TARGET_LANGUAGE,
+  getLocalizedLanguageName,
+  getNllbSpeechLocale,
+} from "./nllb-languages";
 import { normalizeUiLocale } from "./languages";
 
-const DEFAULT_SOURCE_LANGUAGE = "rus_Cyrl";
-const DEFAULT_TARGET_LANGUAGE = "eng_Latn";
 const MainPage = lazy(() => import("./pages/MainPage"));
 const SettingsRoute = lazy(() => import("./pages/SettingsRoute"));
 
@@ -23,7 +26,8 @@ function App() {
   const navigate = useNavigate();
   const [sourceLanguage, setSourceLanguage] = useState<string>(DEFAULT_SOURCE_LANGUAGE);
   const [targetLanguage, setTargetLanguage] = useState<string>(DEFAULT_TARGET_LANGUAGE);
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const prevSourceLanguageRef = useRef(sourceLanguage);
+  const { theme, setTheme } = useTheme();
   const { selectedLanguages, addLanguage, removeLanguage } = useLanguageList();
 
   const {
@@ -61,19 +65,23 @@ function App() {
 
   // If selected language is removed from the list, fall back to first available
   useEffect(() => {
+    if (selectedLanguages.length === 0) return;
     const codes = selectedLanguages.map((l) => l.code);
-    if (codes.length > 0 && !codes.includes(sourceLanguage)) {
-      setSourceLanguage(codes[0]);
-    }
-    if (codes.length > 0 && !codes.includes(targetLanguage)) {
-      setTargetLanguage(codes[0]);
-    }
+    if (!codes.includes(sourceLanguage)) setSourceLanguage(codes[0]);
+    if (!codes.includes(targetLanguage)) setTargetLanguage(codes[0]);
   }, [selectedLanguages, sourceLanguage, targetLanguage]);
 
   const clearAll = useCallback(() => {
     clearTranscript();
     clearTranslation();
   }, [clearTranscript, clearTranslation]);
+
+  useEffect(() => {
+    if (prevSourceLanguageRef.current !== sourceLanguage) {
+      clearAll();
+      prevSourceLanguageRef.current = sourceLanguage;
+    }
+  }, [sourceLanguage, clearAll]);
 
   const handleSpeak = useCallback(() => {
     const locale = translatedText
@@ -98,7 +106,6 @@ function App() {
 
     document.documentElement.lang = normalizedLocale;
     document.documentElement.dir = nextDirection;
-    document.body.dataset.theme = resolvedTheme;
 
     document.title = t("seoTitle");
 
@@ -109,7 +116,7 @@ function App() {
       document.head.append(description);
     }
     description.setAttribute("content", t("seoDescription"));
-  }, [resolvedTheme, t]);
+  }, [t]);
 
   const canClear = Boolean(
     transcript || partialTranscript || translatedText || error || translationError,
@@ -127,29 +134,53 @@ function App() {
             ? t("statusInstalled")
             : t("statusReady");
 
-  const activeUiLocale = normalizeUiLocale(i18n.resolvedLanguage ?? i18n.language) as UiLocale;
+  const activeUiLocale = useMemo<UiLocale>(
+    () => normalizeUiLocale(i18n.resolvedLanguage ?? i18n.language),
+    // i18n is stable; re-derive only when t changes (which means language changed).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t],
+  );
 
-  const uiLanguageOptions = UI_LOCALES.map((language) => ({
-    value: language,
-    label: t(`languages.${language}`),
-  }));
+  const uiLanguageOptions = useMemo(
+    () =>
+      UI_LOCALES.map((language) => ({
+        value: language,
+        label: t(`languages.${language}`),
+      })),
+    [t],
+  );
 
-  const languageOptions = selectedLanguages.map((lang) => ({
-    value: lang.code,
-    label: getLocalizedLanguageName(lang.code, activeUiLocale),
-  }));
+  const languageOptions = useMemo(
+    () =>
+      selectedLanguages.map((lang) => ({
+        value: lang.code,
+        label: getLocalizedLanguageName(lang.code, activeUiLocale),
+      })),
+    [selectedLanguages, activeUiLocale],
+  );
 
-  const themeOptions: Array<{ value: ThemeMode; label: string }> = [
-    { value: "system", label: t("themeSystem") },
-    { value: "light", label: t("themeLight") },
-    { value: "dark", label: t("themeDark") },
-  ];
+  const selectedLanguageCodes = useMemo(
+    () => selectedLanguages.map((l) => l.code),
+    [selectedLanguages],
+  );
 
-  const loadingStageLabelByValue: Record<string, string> = {
-    "Loading model": t("loadingStageLoadingModel"),
-    "Initializing model": t("loadingStageInitializingModel"),
-    "Model ready": t("loadingStageReady"),
-  };
+  const themeOptions = useMemo<Array<{ value: ThemeMode; label: string }>>(
+    () => [
+      { value: "system", label: t("themeSystem") },
+      { value: "light", label: t("themeLight") },
+      { value: "dark", label: t("themeDark") },
+    ],
+    [t],
+  );
+
+  const loadingStageLabelByValue = useMemo<Record<string, string>>(
+    () => ({
+      "Loading model": t("loadingStageLoadingModel"),
+      "Initializing model": t("loadingStageInitializingModel"),
+      "Model ready": t("loadingStageReady"),
+    }),
+    [t],
+  );
   const loadingHints = useMemo(
     () => [
       t("loadingTipOffline"),
@@ -256,7 +287,7 @@ function App() {
               onUiLanguageChange={handleUiLanguageChange}
               onInstall={install}
               onBack={() => navigate("/")}
-              selectedLanguageCodes={selectedLanguages.map((l) => l.code)}
+              selectedLanguageCodes={selectedLanguageCodes}
               onAddLanguage={addLanguage}
               onRemoveLanguage={removeLanguage}
             />

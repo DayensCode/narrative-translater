@@ -1,60 +1,53 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SILENCE_TIMEOUT_MS, VOICE_ACTIVITY_THRESHOLD } from "../config";
+import {
+  AUDIO_SAMPLE_RATE,
+  SILENCE_TIMEOUT_MS,
+  VOICE_ACTIVITY_THRESHOLD,
+} from "../config";
+import { getWhisperLanguage } from "../nllb-languages";
 import type { WhisperRequest, WhisperResponse } from "../types";
 
-// Map NLLB ISO 639-3 prefix → Whisper language name
-const NLLB_PREFIX_TO_WHISPER: Record<string, string> = {
-  acm: "arabic", acq: "arabic", aeb: "arabic", afr: "afrikaans",
-  ajp: "arabic", aka: "akan", amh: "amharic", apc: "arabic",
-  arb: "arabic", ars: "arabic", ary: "arabic", arz: "arabic",
-  asm: "assamese", ast: "asturian", awa: "hindi", ayr: "aymara",
-  azb: "azerbaijani", azj: "azerbaijani", bak: "bashkir", bel: "belarusian",
-  ben: "bengali", bho: "hindi", bos: "bosnian", bul: "bulgarian",
-  cat: "catalan", ceb: "cebuano", ces: "czech", ckb: "kurdish",
-  cym: "welsh", dan: "danish", deu: "german", ell: "greek",
-  eng: "english", est: "estonian", fas: "persian", fin: "finnish",
-  fra: "french", gle: "irish", glg: "galician", guj: "gujarati",
-  hau: "hausa", heb: "hebrew", hin: "hindi", hrv: "croatian",
-  hun: "hungarian", hye: "armenian", ibo: "igbo", ind: "indonesian",
-  isl: "icelandic", ita: "italian", jav: "javanese", jpn: "japanese",
-  kan: "kannada", kat: "georgian", kaz: "kazakh", khm: "khmer",
-  kin: "kinyarwanda", kir: "kyrgyz", kor: "korean", lao: "lao",
-  lav: "latvian", lit: "lithuanian", lvs: "latvian", mal: "malayalam",
-  mar: "marathi", mkd: "macedonian", mlt: "maltese", mri: "maori",
-  msa: "malay", mya: "burmese", nep: "nepali", nld: "dutch",
-  nob: "norwegian", nno: "norwegian", nya: "nyanja", oci: "occitan",
-  ory: "odia", pan: "punjabi", pol: "polish", por: "portuguese",
-  ron: "romanian", run: "rundi", rus: "russian", sin: "sinhala",
-  slk: "slovak", slv: "slovenian", sna: "shona", som: "somali",
-  spa: "spanish", srp: "serbian", swe: "swedish", swh: "swahili",
-  tam: "tamil", tel: "telugu", tgk: "tajik", tgl: "tagalog",
-  tha: "thai", tur: "turkish", ukr: "ukrainian", urd: "urdu",
-  uzn: "uzbek", vie: "vietnamese", wol: "wolof", xho: "xhosa",
-  yor: "yoruba", yue: "cantonese", zho: "chinese", zsm: "malay",
-  zul: "zulu",
+type AudioCaptureMessage = {
+  samples: Float32Array;
+  rms: number;
 };
 
-function nllbToWhisperLanguage(nllbCode: string): string | undefined {
-  const prefix = nllbCode.split("_")[0].toLowerCase();
-  return NLLB_PREFIX_TO_WHISPER[prefix];
-}
-
-async function resampleAudioTo16k(
-  chunks: Float32Array[],
+/**
+ * Stitches captured batches together and, if the hardware rate doesn't match
+ * Whisper's 16 kHz, resamples via an OfflineAudioContext.
+ *
+ * `lastVoiceBatchIdx` marks the last batch that actually contained voice; we
+ * keep ~150 ms of trailing silence after it for natural-sounding cutoff and
+ * drop the rest to avoid feeding silence into the model.
+ */
+async function prepareWhisperAudio(
+  batches: Float32Array[],
   sourceSampleRate: number,
-  lastVoiceChunkIdx: number,
+  lastVoiceBatchIdx: number,
 ): Promise<Float32Array> {
-  const TRAILING_CHUNKS = Math.ceil(sourceSampleRate * 0.15 / 128);
-  const trimEnd = Math.min(lastVoiceChunkIdx + TRAILING_CHUNKS, chunks.length - 1);
-  const trimmedChunks = chunks.slice(0, trimEnd + 1);
+  if (batches.length === 0 || lastVoiceBatchIdx < 0) return new Float32Array(0);
 
-  const totalLength = trimmedChunks.reduce((n, c) => n + c.length, 0);
+  const firstBatchLength = batches[0].length;
+  const trailingBatches = Math.max(
+    1,
+    Math.ceil((sourceSampleRate * 0.15) / firstBatchLength),
+  );
+  const trimEnd = Math.min(
+    lastVoiceBatchIdx + trailingBatches,
+    batches.length - 1,
+  );
+  const trimmed = batches.slice(0, trimEnd + 1);
+
+  const totalLength = trimmed.reduce((n, c) => n + c.length, 0);
   if (totalLength === 0) return new Float32Array(0);
 
-  if (sourceSampleRate === 16000) {
+  if (sourceSampleRate === AUDIO_SAMPLE_RATE) {
     const out = new Float32Array(totalLength);
     let off = 0;
-    for (const chunk of trimmedChunks) { out.set(chunk, off); off += chunk.length; }
+    for (const chunk of trimmed) {
+      out.set(chunk, off);
+      off += chunk.length;
+    }
     return out;
   }
 
@@ -65,10 +58,15 @@ async function resampleAudioTo16k(
   });
   const channelData = inputBuffer.getChannelData(0);
   let off = 0;
-  for (const chunk of trimmedChunks) { channelData.set(chunk, off); off += chunk.length; }
+  for (const chunk of trimmed) {
+    channelData.set(chunk, off);
+    off += chunk.length;
+  }
 
-  const targetLength = Math.ceil((totalLength / sourceSampleRate) * 16000);
-  const offlineCtx = new OfflineAudioContext(1, targetLength, 16000);
+  const targetLength = Math.ceil(
+    (totalLength / sourceSampleRate) * AUDIO_SAMPLE_RATE,
+  );
+  const offlineCtx = new OfflineAudioContext(1, targetLength, AUDIO_SAMPLE_RATE);
   const source = offlineCtx.createBufferSource();
   source.buffer = inputBuffer;
   source.connect(offlineCtx.destination);
@@ -91,12 +89,13 @@ export function useSpeechRecognition(language: string) {
   const workerRef = useRef<Worker | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const workletReadyRef = useRef(false);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const processorNodeRef = useRef<AudioWorkletNode | null>(null);
   const silentGainRef = useRef<GainNode | null>(null);
   const silenceStartedAtRef = useRef<number | null>(null);
-  const audioChunksRef = useRef<Float32Array[]>([]);
-  const lastVoiceChunkIdxRef = useRef(-1);
+  const audioBatchesRef = useRef<Float32Array[]>([]);
+  const lastVoiceBatchIdxRef = useRef(-1);
 
   const getWorker = useCallback(() => {
     if (!workerRef.current) {
@@ -110,10 +109,32 @@ export function useSpeechRecognition(language: string) {
 
   useEffect(() => {
     const worker = getWorker();
+    let warmupDone = false;
+
+    // Safety valve: if warmup never completes (e.g. restricted storage in
+    // private browsing corrupts the HF cache flow, or the worker crashes
+    // before posting anything back), surface an error to the user instead of
+    // hanging on the loader screen forever.
+    const WARMUP_TIMEOUT_MS = 90_000;
+    const timeoutId = window.setTimeout(() => {
+      if (warmupDone) return;
+      warmupDone = true;
+      setIsModelLoading(false);
+      setIsTranscribing(false);
+      setError(
+        "Модель слишком долго загружается. Проверьте сеть или откройте приложение вне режима инкогнито — в приватных окнах браузера ограничена квота хранилища.",
+      );
+    }, WARMUP_TIMEOUT_MS);
+
+    const finishWarmup = () => {
+      warmupDone = true;
+      window.clearTimeout(timeoutId);
+    };
 
     const handleMessage = (event: MessageEvent<WhisperResponse>) => {
       const data = event.data;
       if (data.type === "ready") {
+        finishWarmup();
         setModelLoadingProgress(100);
         setModelLoadingStage("Model ready");
         setIsModelLoading(false);
@@ -123,25 +144,80 @@ export function useSpeechRecognition(language: string) {
       } else if (data.type === "result") {
         setIsTranscribing(false);
         if (data.text) {
-          setTranscript((prev: string) => (prev ? `${prev} ${data.text}` : data.text));
+          setTranscript((prev: string) =>
+            prev ? `${prev} ${data.text}` : data.text,
+          );
         }
       } else if (data.type === "error") {
+        finishWarmup();
         setIsModelLoading(false);
         setIsTranscribing(false);
         setError(data.message);
       }
     };
 
+    // Unhandled exceptions inside the worker (e.g. a failed dynamic import of
+    // the HF library, QuotaExceededError on Cache Storage in private mode)
+    // never reach our message handler, so the loading flag would stay `true`
+    // forever. Catch them explicitly.
+    const handleWorkerError = (event: ErrorEvent | Event) => {
+      const message =
+        event instanceof ErrorEvent && event.message
+          ? event.message
+          : "Не удалось инициализировать распознавание речи.";
+      console.error("Whisper worker failure:", event);
+      finishWarmup();
+      setIsModelLoading(false);
+      setIsTranscribing(false);
+      setError(message);
+    };
+
     worker.addEventListener("message", handleMessage);
+    worker.addEventListener("error", handleWorkerError);
+    worker.addEventListener("messageerror", handleWorkerError);
     worker.postMessage({ type: "warmup" } satisfies WhisperRequest);
 
-    return () => worker.removeEventListener("message", handleMessage);
+    return () => {
+      window.clearTimeout(timeoutId);
+      worker.removeEventListener("message", handleMessage);
+      worker.removeEventListener("error", handleWorkerError);
+      worker.removeEventListener("messageerror", handleWorkerError);
+    };
   }, [getWorker]);
 
-  const clearAudioResources = useCallback(async () => {
+  /**
+   * Lazily create a single long-lived AudioContext. We try 16 kHz up-front so
+   * that the resampling step becomes a fast straight copy in the common case.
+   */
+  const getAudioContext = useCallback(async (): Promise<AudioContext> => {
+    let ctx = audioContextRef.current;
+    if (!ctx) {
+      try {
+        ctx = new AudioContext({
+          sampleRate: AUDIO_SAMPLE_RATE,
+          latencyHint: "interactive",
+        });
+      } catch {
+        ctx = new AudioContext();
+      }
+      audioContextRef.current = ctx;
+    }
+    if (!workletReadyRef.current) {
+      await ctx.audioWorklet.addModule(
+        new URL("../workers/audio-capture.worklet.ts", import.meta.url),
+      );
+      workletReadyRef.current = true;
+    }
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
+    return ctx;
+  }, []);
+
+  const releaseAudioGraph = useCallback(() => {
     silenceStartedAtRef.current = null;
-    audioChunksRef.current = [];
-    lastVoiceChunkIdxRef.current = -1;
+    audioBatchesRef.current = [];
+    lastVoiceBatchIdxRef.current = -1;
 
     if (processorNodeRef.current) {
       processorNodeRef.current.port.onmessage = null;
@@ -157,32 +233,40 @@ export function useSpeechRecognition(language: string) {
       sourceNodeRef.current = null;
     }
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+      mediaStreamRef.current
+        .getTracks()
+        .forEach((track: MediaStreamTrack) => track.stop());
       mediaStreamRef.current = null;
     }
-    if (audioContextRef.current) {
-      await audioContextRef.current.close();
-      audioContextRef.current = null;
+
+    const ctx = audioContextRef.current;
+    if (ctx && ctx.state === "running") {
+      void ctx.suspend();
     }
   }, []);
 
-  const transcribeBuffer = useCallback(
-    (chunks: Float32Array[], sampleRate: number, lastVoiceIdx: number) => {
-      if (chunks.length === 0 || lastVoiceIdx < 0) return;
+  const transcribeBatches = useCallback(
+    (batches: Float32Array[], sampleRate: number, lastVoiceIdx: number) => {
+      if (batches.length === 0 || lastVoiceIdx < 0) return;
 
       setIsTranscribing(true);
-      void resampleAudioTo16k(chunks, sampleRate, lastVoiceIdx).then((audio) => {
-        if (audio.length === 0) { setIsTranscribing(false); return; }
-        getWorker().postMessage(
-          {
-            type: "transcribe",
-            audio,
-            language: nllbToWhisperLanguage(language),
-            sampleRate: 16000,
-          } satisfies WhisperRequest,
-          [audio.buffer],
-        );
-      });
+      void prepareWhisperAudio(batches, sampleRate, lastVoiceIdx).then(
+        (audio) => {
+          if (audio.length === 0) {
+            setIsTranscribing(false);
+            return;
+          }
+          getWorker().postMessage(
+            {
+              type: "transcribe",
+              audio,
+              language: getWhisperLanguage(language),
+              sampleRate: AUDIO_SAMPLE_RATE,
+            } satisfies WhisperRequest,
+            [audio.buffer],
+          );
+        },
+      );
     },
     [language, getWorker],
   );
@@ -190,14 +274,16 @@ export function useSpeechRecognition(language: string) {
   const stopRecording = useCallback(() => {
     if (!isRecording) return;
 
-    const chunks = [...audioChunksRef.current];
-    const sampleRate = audioContextRef.current?.sampleRate ?? 16000;
-    const lastVoiceIdx = lastVoiceChunkIdxRef.current;
-    void clearAudioResources();
+    const batches = audioBatchesRef.current;
+    const sampleRate =
+      audioContextRef.current?.sampleRate ?? AUDIO_SAMPLE_RATE;
+    const lastVoiceIdx = lastVoiceBatchIdxRef.current;
+
+    releaseAudioGraph();
     setPartialTranscript("");
     setIsRecording(false);
-    transcribeBuffer(chunks, sampleRate, lastVoiceIdx);
-  }, [clearAudioResources, isRecording, transcribeBuffer]);
+    transcribeBatches(batches, sampleRate, lastVoiceIdx);
+  }, [isRecording, releaseAudioGraph, transcribeBatches]);
 
   const startRecording = useCallback(async () => {
     if (isModelLoading) return;
@@ -206,6 +292,8 @@ export function useSpeechRecognition(language: string) {
     setPartialTranscript("");
 
     try {
+      const audioContext = await getAudioContext();
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: false,
         audio: {
@@ -216,46 +304,46 @@ export function useSpeechRecognition(language: string) {
       });
       mediaStreamRef.current = stream;
 
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
-      await audioContext.audioWorklet.addModule(
-        new URL("../workers/audio-capture.worklet.ts", import.meta.url),
-      );
-
       const sourceNode = audioContext.createMediaStreamSource(stream);
       sourceNodeRef.current = sourceNode;
 
-      const processorNode = new AudioWorkletNode(audioContext, "audio-capture-processor");
+      const processorNode = new AudioWorkletNode(
+        audioContext,
+        "audio-capture-processor",
+      );
       processorNodeRef.current = processorNode;
 
-      audioChunksRef.current = [];
+      audioBatchesRef.current = [];
+      lastVoiceBatchIdxRef.current = -1;
       silenceStartedAtRef.current = performance.now();
 
-      processorNode.port.onmessage = (event: MessageEvent<Float32Array>) => {
-        const samples = event.data;
-        let sum = 0;
-        for (let i = 0; i < samples.length; i += 1) {
-          sum += samples[i] * samples[i];
-        }
-        const rms = Math.sqrt(sum / samples.length);
+      processorNode.port.onmessage = (
+        event: MessageEvent<AudioCaptureMessage>,
+      ) => {
+        const { samples, rms } = event.data;
+        audioBatchesRef.current.push(samples);
+
         const now = performance.now();
-
-        audioChunksRef.current.push(new Float32Array(samples));
-
         if (rms > VOICE_ACTIVITY_THRESHOLD) {
-          lastVoiceChunkIdxRef.current = audioChunksRef.current.length - 1;
+          lastVoiceBatchIdxRef.current = audioBatchesRef.current.length - 1;
           silenceStartedAtRef.current = null;
-        } else if (silenceStartedAtRef.current === null) {
+          return;
+        }
+
+        if (silenceStartedAtRef.current === null) {
           silenceStartedAtRef.current = now;
-        } else if (now - silenceStartedAtRef.current >= SILENCE_TIMEOUT_MS) {
-          const chunks = [...audioChunksRef.current];
+          return;
+        }
+
+        if (now - silenceStartedAtRef.current >= SILENCE_TIMEOUT_MS) {
+          const batches = audioBatchesRef.current;
           const sampleRate = audioContext.sampleRate;
-          const lastVoiceIdx = lastVoiceChunkIdxRef.current;
+          const lastVoiceIdx = lastVoiceBatchIdxRef.current;
           silenceStartedAtRef.current = null;
-          void clearAudioResources();
+          releaseAudioGraph();
           setPartialTranscript("");
           setIsRecording(false);
-          transcribeBuffer(chunks, sampleRate, lastVoiceIdx);
+          transcribeBatches(batches, sampleRate, lastVoiceIdx);
         }
       };
 
@@ -269,12 +357,14 @@ export function useSpeechRecognition(language: string) {
 
       setIsRecording(true);
     } catch (err) {
-      await clearAudioResources();
+      releaseAudioGraph();
       setError(
-        err instanceof Error ? err.message : "Не удалось запустить распознавание.",
+        err instanceof Error
+          ? err.message
+          : "Не удалось запустить распознавание.",
       );
     }
-  }, [isModelLoading, clearAudioResources, transcribeBuffer]);
+  }, [isModelLoading, getAudioContext, releaseAudioGraph, transcribeBatches]);
 
   const clearTranscript = useCallback(() => {
     setTranscript("");
@@ -287,8 +377,14 @@ export function useSpeechRecognition(language: string) {
       workerRef.current.terminate();
       workerRef.current = null;
     }
-    void clearAudioResources();
-  }, [clearAudioResources]);
+    releaseAudioGraph();
+    const ctx = audioContextRef.current;
+    if (ctx) {
+      void ctx.close();
+      audioContextRef.current = null;
+      workletReadyRef.current = false;
+    }
+  }, [releaseAudioGraph]);
 
   return {
     isRecording,

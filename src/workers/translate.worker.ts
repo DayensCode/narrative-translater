@@ -1,39 +1,30 @@
-import { env, pipeline } from "@huggingface/transformers";
 import type { TranslationRequest, TranslationResponse } from "../types";
 import {
   MAX_CHUNK_CHARS,
   TRANSLATION_MAX_NEW_TOKENS,
   TRANSLATION_NUM_BEAMS,
 } from "../config";
+import { createHfPipeline } from "./_hf";
 
 const NLLB_MODEL = "Xenova/nllb-200-distilled-600M";
 
+type TranslatorCallOptions = {
+  src_lang: string;
+  tgt_lang: string;
+  max_new_tokens?: number;
+  num_beams?: number;
+};
+
 type TranslatorFn = (
-  input: string,
-  options?: Record<string, unknown>,
+  input: string | string[],
+  options: TranslatorCallOptions,
 ) => Promise<Array<{ translation_text: string }>>;
 
 let translatorPromise: Promise<TranslatorFn> | null = null;
 
 async function getTranslator(): Promise<TranslatorFn> {
   if (translatorPromise) return translatorPromise;
-
-  translatorPromise = (async () => {
-    if (env.backends?.onnx?.wasm) {
-      env.backends.onnx.wasm.numThreads = 1;
-    }
-
-    try {
-      return (await pipeline("translation", NLLB_MODEL, {
-        dtype: "q8",
-      })) as unknown as TranslatorFn;
-    } catch {
-      return (await pipeline("translation", NLLB_MODEL, {
-        dtype: "q4",
-      })) as unknown as TranslatorFn;
-    }
-  })();
-
+  translatorPromise = createHfPipeline("translation", NLLB_MODEL) as Promise<TranslatorFn>;
   return translatorPromise;
 }
 
@@ -74,20 +65,22 @@ async function translateText(
 ): Promise<string> {
   const translator = await getTranslator();
   const chunks = splitForTranslation(text);
-  const parts: string[] = [];
+  if (chunks.length === 0) return "";
 
-  for (const chunk of chunks) {
-    const output = await translator(chunk, {
-      src_lang: srcLang,
-      tgt_lang: tgtLang,
-      max_new_tokens: TRANSLATION_MAX_NEW_TOKENS,
-      num_beams: TRANSLATION_NUM_BEAMS,
-    });
-    const translated = output[0]?.translation_text?.trim() ?? "";
-    if (translated) parts.push(translated);
-  }
+  // Single batched inference for all chunks — lets ONNX reuse compute and
+  // avoids the sequential per-chunk await penalty.
+  const output = await translator(chunks, {
+    src_lang: srcLang,
+    tgt_lang: tgtLang,
+    max_new_tokens: TRANSLATION_MAX_NEW_TOKENS,
+    num_beams: TRANSLATION_NUM_BEAMS,
+  });
 
-  return parts.join(" ").trim();
+  return output
+    .map((r) => r.translation_text?.trim() ?? "")
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 }
 
 self.onmessage = async (event: MessageEvent<TranslationRequest>) => {

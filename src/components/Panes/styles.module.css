@@ -96,6 +96,8 @@
     font-size: clamp(1.18rem, 2vw, 1.55rem);
     line-height: 1.65;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .source-input {
@@ -111,6 +113,8 @@
     font-size: clamp(1.18rem, 2vw, 1.55rem);
     line-height: 1.65;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
     padding: 0;
     box-sizing: border-box;
     field-sizing: content;

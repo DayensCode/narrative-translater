@@ -1,22 +1,21 @@
-import { env, pipeline } from "@huggingface/transformers";
 import type { WhisperRequest, WhisperResponse } from "../types";
+import { createHfPipeline, type LoaderProgressInfo } from "./_hf";
 
 const WHISPER_MODEL = "Xenova/whisper-small";
 
-type ASRPipeline = (
-  audio: Float32Array,
-  options?: Record<string, unknown>,
-) => Promise<{ text: string }>;
+type ASRCallOptions = {
+  language?: string;
+  task?: "transcribe" | "translate";
+  sampling_rate?: number;
+};
+
+type ASRResult = { text?: string } | Array<{ text?: string }>;
+
+type ASRPipeline = (audio: Float32Array, options?: ASRCallOptions) => Promise<ASRResult>;
 
 let pipelinePromise: Promise<ASRPipeline> | null = null;
 const fileProgress = new Map<string, number>();
 let lastLoadingProgress = 0;
-
-type LoaderProgressInfo = {
-  status: "initiate" | "download" | "progress" | "done" | "ready";
-  file?: string;
-  progress?: number;
-};
 
 function clampPercentage(value: number): number {
   return Math.min(100, Math.max(0, value));
@@ -59,35 +58,12 @@ function emitLoadingProgress(data: LoaderProgressInfo): void {
   } satisfies WhisperResponse);
 }
 
-function resetLoadingState(): void {
-  fileProgress.clear();
-  lastLoadingProgress = 0;
-}
-
 async function getASR(): Promise<ASRPipeline> {
   if (pipelinePromise) return pipelinePromise;
 
-  const progressCallback = (progressInfo: LoaderProgressInfo) => {
-    emitLoadingProgress(progressInfo);
-  };
-
-  pipelinePromise = (async () => {
-    if (env.backends?.onnx?.wasm) {
-      env.backends.onnx.wasm.numThreads = 1;
-    }
-    try {
-      return (await pipeline("automatic-speech-recognition", WHISPER_MODEL, {
-        dtype: "q8",
-        progress_callback: progressCallback,
-      })) as unknown as ASRPipeline;
-    } catch {
-      resetLoadingState();
-      return (await pipeline("automatic-speech-recognition", WHISPER_MODEL, {
-        dtype: "q4",
-        progress_callback: progressCallback,
-      })) as unknown as ASRPipeline;
-    }
-  })();
+  pipelinePromise = createHfPipeline("automatic-speech-recognition", WHISPER_MODEL, {
+    progressCallback: emitLoadingProgress,
+  }) as Promise<ASRPipeline>;
 
   return pipelinePromise;
 }
@@ -97,7 +73,6 @@ self.onmessage = async (event: MessageEvent<WhisperRequest>) => {
 
   if (data.type === "warmup") {
     try {
-      resetLoadingState();
       emitLoadingProgress({ status: "initiate" });
       await getASR();
       emitLoadingProgress({ status: "ready" });
@@ -119,7 +94,10 @@ self.onmessage = async (event: MessageEvent<WhisperRequest>) => {
         task: "transcribe",
         sampling_rate: sampleRate,
       });
-      self.postMessage({ type: "result", text: result.text.trim() } satisfies WhisperResponse);
+      const text = Array.isArray(result)
+        ? result.map((r) => r.text ?? "").join(" ")
+        : (result.text ?? "");
+      self.postMessage({ type: "result", text: text.trim() } satisfies WhisperResponse);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Не удалось распознать речь.";

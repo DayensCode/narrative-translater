@@ -10,6 +10,25 @@
         />
         <meta name="theme-color" content="#f3efe6" />
         <title>Narrative</title>
+        <script>
+            // Anti-flash: applies the right theme before React mounts.
+            (function () {
+                try {
+                    var saved = localStorage.getItem("narrative-theme");
+                    var system = window.matchMedia(
+                        "(prefers-color-scheme: dark)",
+                    ).matches
+                        ? "dark"
+                        : "light";
+                    var resolved =
+                        saved === "dark" || saved === "light" ? saved : system;
+                    document.documentElement.dataset.theme = resolved;
+                    document.documentElement.style.colorScheme = resolved;
+                } catch (e) {
+                    // Private mode / disabled storage — fall back to CSS default.
+                }
+            })();
+        </script>
     </head>
     <body>
         <div id="root"></div>

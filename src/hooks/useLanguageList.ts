@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   DEFAULT_LANGUAGE_CODES,
   NLLB_LANGUAGES_BY_CODE,
@@ -23,7 +23,11 @@ function loadFromStorage(): string[] {
 }
 
 function saveToStorage(codes: string[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(codes));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(codes));
+  } catch {
+    // ignore — quota / private mode
+  }
 }
 
 export function useLanguageList() {
@@ -47,9 +51,15 @@ export function useLanguageList() {
     });
   }, []);
 
-  const selectedLanguages: NllbLanguage[] = selectedCodes
-    .map((code) => NLLB_LANGUAGES_BY_CODE.get(code))
-    .filter((l): l is NllbLanguage => l !== undefined);
+  // Memoized so that downstream effects / memoized options do not fire on
+  // every render just because the array reference changed.
+  const selectedLanguages = useMemo<NllbLanguage[]>(
+    () =>
+      selectedCodes
+        .map((code) => NLLB_LANGUAGES_BY_CODE.get(code))
+        .filter((l): l is NllbLanguage => l !== undefined),
+    [selectedCodes],
+  );
 
   return { selectedCodes, selectedLanguages, addLanguage, removeLanguage };
 }

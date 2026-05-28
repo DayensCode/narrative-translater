@@ -1,138 +1,56 @@
 # Компоненты
 
-## Общий принцип
+Все UI-компоненты — презентационные. Сайд-эффекты и состояние живут в хуках
+и `App.tsx`.
 
-Компоненты в `src/components` не содержат тяжёлой бизнес-логики. Они получают готовые данные и обработчики сверху, в основном из `App.tsx` и route-обёрток.
+## `TopBar`
 
-## TopBar
+Hero-блок главного экрана:
 
-Файл: `src/components/TopBar/TopBar.tsx`
+- Бренд, eyebrow, live-статус (`isRecording` / `isTranscribing` / …).
+- Два селекта (source / target language) с кнопкой swap между ними.
+- Ghost-кнопки «очистить» и «настройки».
+- `data-tour-id` атрибуты используются `OnboardingOverlay` как якоря.
 
-Назначение:
+## `Panes`
 
-- показывает верхнюю панель приложения
-- отображает статус
-- даёт выбрать source/target language
-- содержит действия `Clear` и `Settings`
+Двухколоночные панели «source / target»:
 
-Основные props:
+- Source — редактируемый `<textarea>` (можно править распознанный текст).
+- Target — read-only-представление перевода.
+- В CSS выставлены `overflow-wrap: anywhere` и `word-break: break-word`,
+  чтобы длинные токены/URL не растягивали контейнер.
 
-| Prop | Тип |
-|------|-----|
-| `appName` | `string` |
-| `eyebrow` | `string` |
-| `status` | `string` |
-| `sourceLanguageLabel` | `string` |
-| `selectedSourceLanguage` | `SourceLanguageCode` |
-| `sourceLanguageOptions` | `Array<{ value: SourceLanguageCode; label: string }>` |
-| `onSourceLanguageChange` | `(language: SourceLanguageCode) => void` |
-| `swapLanguagesLabel` | `string` |
-| `onSwapLanguages` | `() => void` |
-| `translationLanguageLabel` | `string` |
-| `selectedTargetLanguage` | `TranslationLanguageCode` |
-| `translationLanguageOptions` | `Array<{ value: TranslationLanguageCode; label: string }>` |
-| `onTargetLanguageChange` | `(language: TranslationLanguageCode) => void` |
-| `clearLabel` | `string` |
-| `canClear` | `boolean` |
-| `onClear` | `() => void` |
-| `settingsLabel` | `string` |
-| `onOpenSettings` | `() => void` |
+## `Controls`
 
-## Panes
+Действия записи и воспроизведения:
 
-Файл: `src/components/Panes/Panes.tsx`
+- Record toggle (mic), tied to `isRecording`.
+- Speak/Stop для `useSpeechSynthesis`.
+- Индикатор загрузки модели (`modelLoadingProgress`, `modelLoadingStage`).
 
-Назначение:
+## `SettingsPage`
 
-- рендерит source pane и target pane
-- показывает финальный transcript
-- отдельно выводит partial transcript
-- показывает note о текущих ограничениях перевода
+Экран настроек:
 
-Props:
+- Выбор темы (`system / light / dark`).
+- Выбор языка UI — список из `UI_LOCALES`.
+- Управление списком NLLB-языков (добавить/удалить, запрет на удаление
+  последнего).
+- Кнопка «установить приложение», если `isInstallAvailable`.
 
-| Prop | Тип |
-|------|-----|
-| `sourceTitle` | `string` |
-| `targetTitle` | `string` |
-| `sourceLanguageLabel` | `string` |
-| `targetLanguageLabel` | `string` |
-| `transcript` | `string` |
-| `partialTranscript` | `string` |
-| `translatedText` | `string` |
-| `sourcePlaceholder` | `string` |
-| `targetPlaceholder` | `string` |
-| `partialLabel` | `string` |
-| `translationNote` | `string` |
+## `OnboardingOverlay`
 
-## Controls
+Показывает туториал поверх UI:
 
-Файл: `src/components/Controls/Controls.tsx`
+- Подсвечивает элемент по CSS-селектору (через `getBoundingClientRect`).
+- Ресайз и скролл окна отслеживаются с rAF-троттлингом. Scroll listener
+  помечен `passive: true`.
+- Шаги передаются через props; конкретные последовательности описаны в
+  `src/pages/main-onboarding-steps.ts` и
+  `src/pages/settings-onboarding-steps.ts`.
 
-Назначение:
+## `Loader`
 
-- управляет началом и остановкой записи
-- запускает озвучку
-- останавливает текущую озвучку
-
-Props:
-
-| Prop | Тип |
-|------|-----|
-| `isRecording` | `boolean` |
-| `isSpeaking` | `boolean` |
-| `canRecord` | `boolean` |
-| `canSpeak` | `boolean` |
-| `listenLabel` | `string` |
-| `stopListeningLabel` | `string` |
-| `speakLabel` | `string` |
-| `stopSpeechLabel` | `string` |
-| `onToggleRecording` | `() => void` |
-| `onSpeak` | `() => void` |
-| `onStopSpeaking` | `() => void` |
-
-## SettingsPage
-
-Файл: `src/components/SettingsPage/SettingsPage.tsx`
-
-Назначение:
-
-- показывает экран настроек
-- меняет язык интерфейса
-- меняет тему
-- рендерит кнопку установки PWA, если установка доступна
-
-Props:
-
-| Prop | Тип |
-|------|-----|
-| `backLabel` | `string` |
-| `title` | `string` |
-| `themeLabel` | `string` |
-| `theme` | `ThemeMode` |
-| `themeOptions` | `Array<{ value: ThemeMode; label: string }>` |
-| `onThemeChange` | `(theme: ThemeMode) => void` |
-| `interfaceLanguageLabel` | `string` |
-| `selectedUiLanguage` | `UiLocale` |
-| `uiLanguageOptions` | `Array<{ value: UiLocale; label: string }>` |
-| `onUiLanguageChange` | `(language: UiLocale) => void` |
-| `installLabel` | `string` |
-| `isInstalled` | `boolean` |
-| `isInstallAvailable` | `boolean` |
-| `onInstall` | `() => void` |
-| `onBack` | `() => void` |
-
-## Loader
-
-Файл: `src/components/Loader/Loader.tsx`
-
-Назначение:
-
-- используется как `Suspense` fallback для lazy-loaded routes
-- показывает статусный текст и индикатор загрузки
-
-Props:
-
-| Prop | Тип |
-|------|-----|
-| `label` | `string` |
+Fallback для `Suspense`: показывает простой индикатор пока грузится
+ленивый чанк.

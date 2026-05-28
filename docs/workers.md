@@ -1,84 +1,55 @@
-# Workers
+# Воркеры
 
-## translate.worker.ts
+Тяжёлые вычисления (ASR, перевод, захват аудио) выполняются вне UI-потока.
 
-Файл: `src/workers/translate.worker.ts`
+## `src/workers/_hf.ts`
 
-Тип:
+Общий хелпер для Hugging Face `pipeline`:
 
-- модульный `Web Worker`
+- `configureOnnxWasmThreads()` — включает multi-thread ONNX только если есть
+  `crossOriginIsolated` (COOP+COEP + `SharedArrayBuffer`). Иначе
+  `numThreads = 1`.
+- `pickPreferredDtype()` — эвристика квантизации: `q4` для слабых устройств
+  (`deviceMemory < 4` или `hardwareConcurrency <= 2`), иначе `q8`.
+- `createHfPipeline(task, model, { progressCallback })` — единая точка
+  создания пайплайна. Возвращает `Promise<unknown>`: конкретные воркеры
+  кастуют результат к своей callable-сигнатуре.
 
-Назначение:
+Это избавляет от паттерна «попробовать q8 → упасть → откатиться на q4»:
+dtype выбирается заранее, до начала download.
 
-- загружает translation pipelines из `@huggingface/transformers`
-- прогревает модель при старте
-- выбирает маршрут перевода по языковой паре
-- переводит текст батчами, не блокируя UI-поток
+## `src/workers/whisper.worker.ts`
 
-## Жизненный цикл
+- Модель: `Xenova/whisper-small`.
+- Создаёт пайплайн `automatic-speech-recognition` через `createHfPipeline`.
+- Агрегирует прогресс загрузки по файлам модели и отправляет
+  `loading-progress` с полем `stage` («Loading model», «Initializing
+  model», «Model ready»).
+- Для `transcribe` принимает `Float32Array` на целевом sample rate и
+  возвращает `text` одним сообщением.
 
-1. `useTranslation` создаёт воркер при монтировании.
-2. Сразу отправляется сообщение `{ id: 0, action: "warmup" }`.
-3. Воркер загружает базовую модель `Xenova/opus-mt-ru-en`.
-4. При вызове `translate(...)` основной поток отправляет `action: "translate"` с `text`, `sourceLanguage`, `targetLanguage`.
-5. Воркер возвращает `translatedText` или `error`.
-6. При размонтировании хука воркер завершается.
+## `src/workers/translate.worker.ts`
 
-## Маршрутизация перевода
+- Модель: `Xenova/nllb-200-distilled-600M`.
+- Пайплайн: `translation`, создаётся лениво.
+- `splitForTranslation` режет вход по предложениям с порогом
+  `MAX_CHUNK_CHARS`.
+- Все чанки отправляются одним батч-вызовом (`translator(chunks, …)`), что
+  позволяет ONNX переиспользовать compute и не ждать последовательных
+  `await`.
+- Ответ — полная строка в `translatedText` (не стриминг).
+- Включает `max_new_tokens` и `num_beams` из `config/translation.ts`.
 
-Воркер поддерживает три типа маршрутов:
+## `src/workers/audio-capture.worklet.ts`
 
-- direct: одна модель для пары, например `ru -> es`
-- through English: `source -> en` или `en -> target`
-- pivot: `source -> en -> target`
+`AudioWorkletProcessor`, работающий в audio-thread:
 
-Примеры текущих маппингов:
+- Аккумулирует 16 frame × 128 сэмплов (= 2048 samples) перед отправкой.
+- Считает RMS по батчу (квадраты сэмплов суммируются инкрементально, корень
+  берётся один раз на батч).
+- Отправляет `{ samples, rms }` в main thread через transferable
+  `samples.buffer`.
+- Поддерживает «перелив» остатка канала в следующий батч без потерь.
 
-- source to English: `ru`, `es`, `fr`, `zh`, `ar`, `hi`
-- English to target: `ru`, `es`, `fr`, `hi`, `zh`, `ar`
-- direct shortcuts: `ru -> es`, `ru -> fr`
-
-Если маршрут не сконфигурирован, воркер возвращает ошибку.
-
-## Chunking
-
-Функция `splitForTranslation()`:
-
-- нормализует пробелы
-- пытается делить текст по границам предложений
-- собирает чанки длиной не больше `MAX_CHUNK_CHARS`
-
-Каждый chunk переводится отдельно, затем результаты склеиваются.
-
-## Параметры inference
-
-- `max_new_tokens`: `TRANSLATION_MAX_NEW_TOKENS`
-- `num_beams`: `TRANSLATION_NUM_BEAMS`
-
-При загрузке pipeline сначала используется `dtype: "q8"`, а при неудаче выполняется fallback на `dtype: "q4"`.
-
-## Локальные особенности
-
-- warning про `MarianTokenizer` и отсутствие fast-tokenizer осознанно фильтруется
-- для ONNX WASM backend число потоков принудительно ставится в `1`
-- переводчики кэшируются в `Map<string, Promise<TranslatorFn>>`, чтобы не создавать один и тот же pipeline повторно
-
-## audio-capture.worklet.ts
-
-Файл: `src/workers/audio-capture.worklet.ts`
-
-Тип:
-
-- `AudioWorkletProcessor`
-
-Назначение:
-
-- получает аудиокадры из `inputs[0][0]`
-- отправляет `Float32Array` в основной поток через `port.postMessage`
-- не делает распознавание и не считает VAD сам
-
-VAD и передача данных в Vosk происходят в `useSpeechRecognition`.
-
-## TypeScript-ограничения
-
-`AudioWorkletProcessor` и `registerProcessor` не типизированы стандартными lib в текущей конфигурации проекта, поэтому нужные объявления заданы локально в начале файла.
+Такая архитектура уменьшает количество `postMessage` с ~375/сек (при 48 kHz
+на 128 сэмплов) до ~23/сек и снимает с main thread вычисление RMS.

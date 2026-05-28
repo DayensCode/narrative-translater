@@ -2,26 +2,30 @@
 
 ## Обзор
 
-`Narrative` это клиентское React-приложение на `Vite` и `TypeScript`. Бэкенда нет: распознавание, перевод, воспроизведение речи и PWA-установка работают в браузере.
+`Narrative` — клиентское React-приложение на Vite и TypeScript. Бэкенда нет:
+распознавание, перевод, воспроизведение речи и PWA-установка работают в
+браузере.
 
 Приложение построено вокруг двух экранов:
 
 - `#/` — основной экран перевода
-- `#/settings` — настройки темы, языка интерфейса и установки PWA
+- `#/settings` — настройки темы, языка интерфейса и списка языков перевода
 
-Маршрутизация реализована через `HashRouter`, чтобы приложение проще работало как статический PWA-бандл.
+Маршрутизация реализована через `HashRouter`, чтобы приложение проще работало
+как статический PWA-бандл.
 
 ## Поток данных
 
 ```text
 Микрофон
   -> MediaStream
-  -> AudioContext
-  -> AudioWorklet (audio-capture.worklet.ts)
+  -> AudioContext (единый, 16 kHz)
+  -> AudioWorklet (audio-capture.worklet.ts, batch + RMS)
   -> useSpeechRecognition
+  -> whisper.worker.ts (Xenova/whisper-small)
   -> transcript / partialTranscript
   -> useTranslation
-  -> Web Worker (translate.worker.ts)
+  -> translate.worker.ts (Xenova/nllb-200-distilled-600M, batched chunks)
   -> translatedText
   -> useSpeechSynthesis
   -> SpeechSynthesis API
@@ -31,90 +35,113 @@
 
 ### `src/main.tsx`
 
-- регистрирует service worker через `registerSW({ immediate: true })`
-- инициализирует `HashRouter`
-- монтирует корневой компонент `App`
+- ждёт `i18nReady` (загрузка первой локали) перед mount,
+- регистрирует service worker через `registerSW({ immediate: true })`,
+- просит `navigator.storage.persist()` чтобы браузер не выбрасывал модели,
+- инициализирует `HashRouter` и монтирует `App`.
 
 ### `src/App.tsx`
 
 `App` содержит orchestration-логику:
 
-- хранит выбранные source/target language
-- хранит тему через `useTheme`
-- связывает транскрипт с переводом через `useEffect`
-- формирует текстовый статус интерфейса
-- настраивает `document.lang`, `dir`, `title` и `meta[name="description"]`
-- лениво загружает страницы `MainPage` и `SettingsRoute`
+- хранит выбранные source/target language (дефолты из `nllb-languages`),
+- связывает транскрипт с переводом через `useEffect`,
+- формирует статус интерфейса и онбординг-шаги через мемоизированные опции,
+- настраивает `document.lang`, `dir`, `title` и `meta[name="description"]`.
+
+Тема и RTL применяются к `<html>` (см. `useTheme`), с anti-flash snippet в
+`index.html`, чтобы до mount уже был правильный цвет.
 
 ## Слои
 
 ### `src/hooks/`
 
-Хуки инкапсулируют побочные эффекты и браузерные API:
-
-- `useSpeechRecognition` — Vosk, `getUserMedia`, `AudioContext`, `AudioWorklet`, VAD
-- `useTranslation` — lifecycle переводческого воркера, debounce, request tracking
-- `useSpeechSynthesis` — `SpeechSynthesisUtterance` и выбор голоса
-- `usePWAInstall` — `beforeinstallprompt` и `appinstalled`
-- `useTheme` — пользовательская тема, system fallback, `localStorage`
+- `useSpeechRecognition` — единый `AudioContext` (пересоздаётся только при
+  `dispose`), `AudioWorklet` подгружается один раз, VAD/тишина считается из
+  RMS, присылаемого воркером.
+- `useTranslation` — lifecycle перевода: worker стартует через
+  `requestIdleCallback`, чтобы не воевать с Whisper за канал; debounce,
+  stale-response cancellation через инкремент `requestIdRef`.
+- `useSpeechSynthesis` — кэш `getVoices()` с подпиской на `voiceschanged`.
+- `useLanguageList` — хранение выбранного набора NLLB-кодов в localStorage,
+  мемоизированные `selectedLanguages` / `selectedCodes`.
+- `useTheme` — тема + синхронизация с `prefers-color-scheme`, пишет на
+  `<html data-theme>` и `style.colorScheme`.
+- `usePWAInstall` — `beforeinstallprompt` / `appinstalled`, начальное
+  значение `isInstalled` читается из `matchMedia` в initializer.
 
 ### `src/components/`
 
-Компоненты в основном презентационные:
-
-- `TopBar` — hero-блок, селекты языков, очистка, переход в настройки
-- `Panes` — две рабочие панели: source/target
-- `Controls` — действия записи и воспроизведения
-- `SettingsPage` — настройки UI и PWA
-- `Loader` — fallback для lazy routes
+- `TopBar` — hero-блок, селекты языков, очистка, переход в настройки.
+- `Panes` — две рабочие панели: source/target. CSS включает
+  `overflow-wrap: anywhere` и `word-break: break-word` чтобы длинные строки
+  не ломали layout.
+- `Controls` — действия записи и воспроизведения.
+- `SettingsPage` — настройки UI, список NLLB-языков и PWA install.
+- `OnboardingOverlay` — туториал c rAF throttle.
+- `Loader` — fallback для Suspense.
 
 ### `src/pages/`
 
-Страницы собирают layout из компонентных блоков:
-
-- `MainPage` рендерит главный экран
-- `SettingsRoute` оборачивает `SettingsPage` в общий shell
+- `MainPage` и `SettingsRoute` рендерят свои экраны.
+- Онбординг-шаги вынесены в `pages/*-onboarding-steps.ts` и мемоизируются.
 
 ### `src/workers/`
 
-- `translate.worker.ts` — перевод в отдельном потоке
-- `audio-capture.worklet.ts` — прокидывает аудиосэмплы из audio graph в основной поток
+- `_hf.ts` — общий `createHfPipeline`: выбирает dtype (q8/q4) по
+  `deviceMemory` / `hardwareConcurrency`, настраивает ONNX WASM threads
+  (только при `crossOriginIsolated`).
+- `translate.worker.ts` — NLLB, батчит массив чанков одним вызовом.
+- `whisper.worker.ts` — Whisper, отдаёт loading progress наружу.
+- `audio-capture.worklet.ts` — `AudioWorkletProcessor`, батчит 16 frame × 128
+  сэмплов, считает RMS в воркере и отправляет буфер через transferable.
 
-### `src/i18n.ts` и `src/languages.ts`
+### `src/i18n/` и `src/languages.ts`
 
-- `src/i18n.ts` хранит UI-переводы и нормализацию интерфейсных локалей
-- `src/languages.ts` описывает поддерживаемые языки ввода, вывода и speech locale
+- `src/languages.ts` — константа `UI_LOCALES` и функция `normalizeUiLocale`.
+- `src/i18n/index.ts` — инициализация i18next, динамический импорт локали по
+  запросу (`addResourceBundle`), `i18nReady` для bootstrap.
+- `src/i18n/locales/*.ts` — по одному файлу на локаль.
+
+### `src/config/`
+
+- `config/audio.ts` — `AUDIO_SAMPLE_RATE`, `SILENCE_TIMEOUT_MS`,
+  `VOICE_ACTIVITY_THRESHOLD`, `WORKLET_FRAMES_PER_BATCH`.
+- `config/translation.ts` — `TRANSLATION_DEBOUNCE_MS`, `MAX_CHUNK_CHARS`,
+  `TRANSLATION_MAX_NEW_TOKENS`, `TRANSLATION_NUM_BEAMS`.
+- `config/index.ts` — barrel.
 
 ### `src/types/index.ts`
 
-Здесь лежат shared-типы для main thread и translation worker.
+Shared-типы для main thread и translation/whisper workers.
 
 ## Ключевые решения
 
-### VAD на стороне клиента
+### VAD на стороне worklet
 
-`useSpeechRecognition` считает RMS по incoming семплам из `AudioWorklet` и завершает запись после `SILENCE_TIMEOUT_MS` тишины.
+RMS считается внутри `AudioWorkletProcessor` и приходит в main thread уже
+готовым числом. Это уменьшает работу в UI-потоке и число `postMessage`.
 
-### Перевод в Web Worker
+### Единый AudioContext
 
-Тяжёлая модель и inference вынесены из UI-потока, поэтому интерфейс не блокируется во время загрузки модели и перевода.
+`AudioContext` создаётся один раз при первом `startRecording`, модуль
+worklet-а загружается один раз (`workletReadyRef`). При остановке мы
+`suspend()` вместо `close()`. Полное закрытие — только в `dispose()`.
 
-### Debounce и request id
+### Перевод в Web Worker + идемпотентность
 
-`useTranslation` откладывает отправку текста на `TRANSLATION_DEBOUNCE_MS` и игнорирует ответы не от последнего запроса.
-
-### Translation routing
-
-`translate.worker.ts` поддерживает несколько сценариев:
-
-- direct route для некоторых пар, например `ru -> es`
-- direct route через English only, если source или target это `en`
-- pivot route `source -> en -> target`, если прямой модели нет
+`useTranslation` при каждом новом вызове инкрементирует `requestIdRef`; ответ
+с устаревшим id игнорируется. Пустой текст сразу сбрасывает состояние и
+инвалидирует последний id.
 
 ### Квантизация модели
 
-При загрузке translation pipeline воркер сначала пробует `q8`, а затем падает обратно на `q4`, если первая загрузка не удалась.
+`createHfPipeline` выбирает `q8` по умолчанию и `q4` на слабых устройствах
+(`deviceMemory < 4` или `hardwareConcurrency <= 2`). Больше нет
+download-then-fail-then-retry цикла.
 
 ### Offline-first PWA
 
-Service worker регистрируется сразу. Workbox кэширует локальный app shell и удалённые артефакты моделей, чтобы повторные запуски были быстрее и стабильнее офлайн.
+Service worker регистрируется сразу, Workbox кэширует локальный app shell и
+удалённые артефакты моделей. `navigator.storage.persist()` запрашивается
+один раз при старте.

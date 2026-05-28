@@ -26,7 +26,9 @@ export function useTheme() {
       ? (saved as ThemeMode)
       : ThemeMode.System;
   });
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => getSystemTheme());
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
+    getSystemTheme(),
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -42,6 +44,15 @@ export function useTheme() {
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
+
+  // Applying the theme to <html> instead of <body> means the boot snippet in
+  // index.html can pre-apply it and we avoid a flash of light theme on dark
+  // systems.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = resolvedTheme;
+    root.style.colorScheme = resolvedTheme;
+  }, [resolvedTheme]);
 
   return { theme, resolvedTheme, setTheme };
 }

@@ -213,10 +213,12 @@ export const NLLB_LANGUAGES: NllbLanguage[] = [
 
 export const NLLB_LANGUAGES_BY_CODE = new Map(NLLB_LANGUAGES.map((l) => [l.code, l]));
 
-// Default 7 languages shown in the main page Select
+export const DEFAULT_SOURCE_LANGUAGE = "rus_Cyrl";
+export const DEFAULT_TARGET_LANGUAGE = "eng_Latn";
+
 export const DEFAULT_LANGUAGE_CODES = [
-  "rus_Cyrl",
-  "eng_Latn",
+  DEFAULT_SOURCE_LANGUAGE,
+  DEFAULT_TARGET_LANGUAGE,
   "spa_Latn",
   "fra_Latn",
   "hin_Deva",
@@ -228,12 +230,46 @@ export function getNllbSpeechLocale(code: string): string {
   return NLLB_LANGUAGES_BY_CODE.get(code)?.speechLocale ?? "en-US";
 }
 
-// Extracts ISO 639-3 from NLLB code (e.g. "quy_Latn" → "quy")
+// ISO 639-3 prefix → Whisper language name (used for transcription hints)
+const NLLB_PREFIX_TO_WHISPER: Record<string, string> = {
+  acm: "arabic", acq: "arabic", aeb: "arabic", afr: "afrikaans",
+  ajp: "arabic", aka: "akan", amh: "amharic", apc: "arabic",
+  arb: "arabic", ars: "arabic", ary: "arabic", arz: "arabic",
+  asm: "assamese", ast: "asturian", awa: "hindi", ayr: "aymara",
+  azb: "azerbaijani", azj: "azerbaijani", bak: "bashkir", bel: "belarusian",
+  ben: "bengali", bho: "hindi", bos: "bosnian", bul: "bulgarian",
+  cat: "catalan", ceb: "cebuano", ces: "czech", ckb: "kurdish",
+  cym: "welsh", dan: "danish", deu: "german", ell: "greek",
+  eng: "english", est: "estonian", fas: "persian", fin: "finnish",
+  fra: "french", gle: "irish", glg: "galician", guj: "gujarati",
+  hau: "hausa", heb: "hebrew", hin: "hindi", hrv: "croatian",
+  hun: "hungarian", hye: "armenian", ibo: "igbo", ind: "indonesian",
+  isl: "icelandic", ita: "italian", jav: "javanese", jpn: "japanese",
+  kan: "kannada", kat: "georgian", kaz: "kazakh", khm: "khmer",
+  kin: "kinyarwanda", kir: "kyrgyz", kor: "korean", lao: "lao",
+  lav: "latvian", lit: "lithuanian", lvs: "latvian", mal: "malayalam",
+  mar: "marathi", mkd: "macedonian", mlt: "maltese", mri: "maori",
+  msa: "malay", mya: "burmese", nep: "nepali", nld: "dutch",
+  nob: "norwegian", nno: "norwegian", nya: "nyanja", oci: "occitan",
+  ory: "odia", pan: "punjabi", pol: "polish", por: "portuguese",
+  ron: "romanian", run: "rundi", rus: "russian", sin: "sinhala",
+  slk: "slovak", slv: "slovenian", sna: "shona", som: "somali",
+  spa: "spanish", srp: "serbian", swe: "swedish", swh: "swahili",
+  tam: "tamil", tel: "telugu", tgk: "tajik", tgl: "tagalog",
+  tha: "thai", tur: "turkish", ukr: "ukrainian", urd: "urdu",
+  uzn: "uzbek", vie: "vietnamese", wol: "wolof", xho: "xhosa",
+  yor: "yoruba", yue: "cantonese", zho: "chinese", zsm: "malay",
+  zul: "zulu",
+};
+
 function nllbToIso(code: string): string {
   return code.split("_")[0];
 }
 
-// Cache per locale to avoid recreating Intl.DisplayNames on every keystroke
+export function getWhisperLanguage(nllbCode: string): string | undefined {
+  return NLLB_PREFIX_TO_WHISPER[nllbToIso(nllbCode).toLowerCase()];
+}
+
 const displayNamesCache = new Map<string, Intl.DisplayNames>();
 
 function getDisplayNames(uiLocale: string): Intl.DisplayNames {

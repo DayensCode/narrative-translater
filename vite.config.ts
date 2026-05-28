@@ -5,8 +5,18 @@ import { VitePWA } from "vite-plugin-pwa";
 // https://vite.dev/config/
 export default defineConfig({
   build: {
-    // Large ML/runtime chunks are expected in this app.
-    chunkSizeWarningLimit: 7000,
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          i18n: ["i18next", "i18next-browser-languagedetector", "react-i18next"],
+          icons: ["lucide-react"],
+          // @huggingface/transformers is only used from workers, so it
+          // doesn't need a main-thread chunk and would otherwise be empty.
+        },
+      },
+    },
   },
   server: {
     host: true,
@@ -31,13 +41,13 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico"],
       devOptions: {
-        enabled: true,
-        type: "module",
+        enabled: false,
       },
       workbox: {
         inlineWorkboxRuntime: true,
         maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
         cleanupOutdatedCaches: true,
+        navigationPreload: true,
         runtimeCaching: [
           {
             urlPattern:
