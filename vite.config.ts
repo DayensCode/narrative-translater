@@ -61,31 +61,35 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         navigationPreload: true,
+        // Default `globPatterns` doesn't include `.mjs` and `.wasm`, but the
+        // self-hosted ONNX runtime in `/public/onnx/` is shipped as exactly
+        // those — without precaching them the app would break offline as
+        // soon as the SW intercepts a fetch for the JSEP loader.
+        globPatterns: ["**/*.{js,mjs,css,html,ico,png,svg,woff,woff2,webmanifest,wasm}"],
+        // Vite picks up an `import.meta.url` reference to the ORT wasm
+        // inside `onnxruntime-web` and emits a fingerprinted copy under
+        // `dist/assets/ort-wasm-simd-threaded.jsep-*.wasm`. We never load
+        // it (we point ORT at `/onnx/` instead), so excluding it keeps
+        // the precache from carrying a useless 21 MB duplicate.
+        globIgnores: ["**/assets/ort-wasm-simd-threaded*.wasm"],
         runtimeCaching: [
           {
             // Only cache successful CORS responses (status 200). Opaque
             // responses (status 0) could be silently-substituted by an
             // on-path attacker during first download — we'd rather fail
             // loudly and re-fetch than persist tampered model weights.
-            urlPattern:
-              /^https:\/\/(huggingface\.co|cdn-lfs\.huggingface\.co|hf\.co)\/.*/i,
+            //
+            // Hugging Face redirects model downloads to regional CDNs
+            // (cdn-lfs-us-1.huggingface.co, cdn-lfs-eu-1.huggingface.co)
+            // and to the Xet backend (cas-bridge.xethub.hf.co), so we
+            // match every subdomain instead of a fixed list.
+            urlPattern: ({ url }) =>
+              /(?:^|\.)huggingface\.co$/i.test(url.host) ||
+              /(?:^|\.)hf\.co$/i.test(url.host) ||
+              url.host === "cas-bridge.xethub.hf.co",
             handler: "CacheFirst",
             options: {
               cacheName: "hf-model-cache",
-              expiration: {
-                maxEntries: 64,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-              cacheableResponse: {
-                statuses: [200],
-              },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "cdn-assets-cache",
               expiration: {
                 maxEntries: 64,
                 maxAgeSeconds: 60 * 60 * 24 * 30,

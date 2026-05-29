@@ -3,90 +3,94 @@
 @import "@fontsource/roboto/700.css";
 
 :root {
-    font-family: "Roboto", "Segoe UI", sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    color-scheme: light;
-    --bg: #f2ede4;
-    --bg-elevated: rgba(255, 250, 241, 0.74);
-    --bg-solid: #fffaf1;
-    --text: #1b160f;
-    --text-soft: #5f5447;
-    --line: rgba(60, 41, 18, 0.12);
-    --line-strong: rgba(60, 41, 18, 0.22);
-    --accent: #7861FF;
-    --accent-strong: #5f47e6;
-    --accent-soft: rgba(120, 97, 255, 0.12);
-    --text-on-accent: #fff7f0;
-    --text-on-accent-soft: #fff5ef;
-    --error-border: rgba(180, 49, 23, 0.2);
-    --error-bg: rgba(180, 49, 23, 0.08);
-    --error-text: #c53f21;
-    --loader-border: rgba(78, 53, 25, 0.12);
-    --loader-bg-start: rgba(255, 250, 243, 0.96);
-    --loader-bg-end: rgba(250, 240, 226, 0.92);
-    --loader-shadow: rgba(61, 36, 10, 0.08);
-    --loader-spinner-track: rgba(120, 97, 255, 0.18);
-    --loader-label: #7861FF;
-    --success: #1f6f55;
-    --shadow: 0 30px 80px rgba(56, 33, 9, 0.12);
+  font-family: "Roboto", "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+  --bg: #f2ede4;
+  --bg-elevated: rgba(255, 250, 241, 0.74);
+  --bg-solid: #fffaf1;
+  --text: #1b160f;
+  --text-soft: #5f5447;
+  --line: rgba(60, 41, 18, 0.12);
+  --line-strong: rgba(60, 41, 18, 0.22);
+  --accent: #7861ff;
+  --accent-strong: #5f47e6;
+  --accent-soft: rgba(120, 97, 255, 0.12);
+  --text-on-accent: #fff7f0;
+  --text-on-accent-soft: #fff5ef;
+  --error-border: rgba(180, 49, 23, 0.2);
+  --error-bg: rgba(180, 49, 23, 0.08);
+  --error-text: #c53f21;
+  --loader-border: rgba(78, 53, 25, 0.12);
+  --loader-bg-start: rgba(255, 250, 243, 0.96);
+  --loader-bg-end: rgba(250, 240, 226, 0.92);
+  --loader-shadow: rgba(61, 36, 10, 0.08);
+  --loader-spinner-track: rgba(120, 97, 255, 0.18);
+  --loader-label: #7861ff;
+  --success: #1f6f55;
+  --shadow: 0 30px 80px rgba(56, 33, 9, 0.12);
 }
 
 html[data-theme="dark"],
 body[data-theme="dark"] {
-    color-scheme: dark;
-    --bg: #111111;
-    --bg-elevated: rgba(27, 27, 27, 0.78);
-    --bg-solid: #161616;
-    --text: #f3ebdd;
-    --text-soft: #bcae97;
-    --line: rgba(243, 235, 221, 0.1);
-    --line-strong: rgba(243, 235, 221, 0.18);
-    --accent: #7861FF;
-    --accent-strong: #9b8aff;
-    --accent-soft: rgba(120, 97, 255, 0.16);
-    --text-on-accent: #fff7f0;
-    --text-on-accent-soft: #fff5ef;
-    --error-border: rgba(240, 118, 92, 0.28);
-    --error-bg: rgba(240, 118, 92, 0.12);
-    --error-text: #ff9f89;
-    --loader-border: rgba(243, 235, 221, 0.12);
-    --loader-bg-start: rgba(31, 31, 31, 0.94);
-    --loader-bg-end: rgba(22, 22, 22, 0.92);
-    --loader-shadow: rgba(0, 0, 0, 0.28);
-    --loader-spinner-track: rgba(120, 97, 255, 0.24);
-    --loader-label: #9b8aff;
-    --success: #62c4a1;
-    --shadow: 0 34px 84px rgba(0, 0, 0, 0.34);
+  color-scheme: dark;
+  --bg: #111111;
+  --bg-elevated: rgba(27, 27, 27, 0.78);
+  --bg-solid: #161616;
+  --text: #f3ebdd;
+  --text-soft: #bcae97;
+  --line: rgba(243, 235, 221, 0.1);
+  --line-strong: rgba(243, 235, 221, 0.18);
+  --accent: #7861ff;
+  --accent-strong: #9b8aff;
+  --accent-soft: rgba(120, 97, 255, 0.16);
+  --text-on-accent: #fff7f0;
+  --text-on-accent-soft: #fff5ef;
+  --error-border: rgba(240, 118, 92, 0.28);
+  --error-bg: rgba(240, 118, 92, 0.12);
+  --error-text: #ff9f89;
+  --loader-border: rgba(243, 235, 221, 0.12);
+  --loader-bg-start: rgba(31, 31, 31, 0.94);
+  --loader-bg-end: rgba(22, 22, 22, 0.92);
+  --loader-shadow: rgba(0, 0, 0, 0.28);
+  --loader-spinner-track: rgba(120, 97, 255, 0.24);
+  --loader-label: #9b8aff;
+  --success: #62c4a1;
+  --shadow: 0 34px 84px rgba(0, 0, 0, 0.34);
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 html {
-    background: var(--bg);
+  background: var(--bg);
 }
 
 body {
-    margin: 0;
-    min-width: 320px;
-    min-height: 100vh;
-    background: var(--bg);
-    color: var(--text);
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
 }
 
 #root {
-    min-height: 100vh;
+  min-height: 100vh;
 }
 
 button,
 select {
-    font: inherit;
+  font: inherit;
 }

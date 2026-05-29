@@ -18,17 +18,32 @@ export type HfPipelineOptions = {
 };
 
 /**
- * Enables ONNX WASM multithreading when the environment allows it.
- * - Multiple threads require `SharedArrayBuffer`, which in turn requires
- *   cross-origin isolation (COOP+COEP). Without it we must stay single-threaded.
+ * Configures the ONNX WASM backend.
+ *
+ * 1. Threading: multiple threads require `SharedArrayBuffer`, which in turn
+ *    requires cross-origin isolation (COOP+COEP). Without it we must stay
+ *    single-threaded.
+ * 2. Asset path: by default transformers.js loads the ORT runtime
+ *    (`ort-wasm-simd-threaded.jsep.mjs` + `.wasm`) from
+ *    `cdn.jsdelivr.net`. That conflicts with our `script-src 'self'` CSP
+ *    (the `.mjs` is fetched as a dynamic ES module) and creates a hard
+ *    third-party supply-chain dependency for an offline-first PWA. We
+ *    self-host the two files in `/public/onnx/` and pin ORT to that path.
  */
-function configureOnnxWasmThreads(): void {
+function configureOnnxWasm(): void {
   if (!env.backends?.onnx?.wasm) return;
   const cores = self.navigator?.hardwareConcurrency ?? 1;
   const isIsolated =
     typeof (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated !==
       "undefined" && (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated;
   env.backends.onnx.wasm.numThreads = isIsolated ? Math.min(4, Math.max(1, cores)) : 1;
+
+  const origin =
+    typeof self !== "undefined" && self.location?.origin
+      ? self.location.origin
+      : "";
+  // Trailing slash matters: ORT does string concatenation, not URL joining.
+  env.backends.onnx.wasm.wasmPaths = `${origin}/onnx/`;
 }
 
 /**
@@ -84,7 +99,7 @@ export async function createHfPipeline(
   model: string,
   options: HfPipelineOptions = {},
 ): Promise<unknown> {
-  configureOnnxWasmThreads();
+  configureOnnxWasm();
   const dtype = await pickPreferredDtype();
   return await pipeline(task, model, {
     dtype,
