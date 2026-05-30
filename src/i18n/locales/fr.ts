@@ -55,6 +55,10 @@ const fr = {
     "La reconnaissance vocale fonctionne actuellement en russe, mais la traduction peut être envoyée vers plusieurs langues.",
     noVoiceOutput:
     "Le navigateur peut ne pas fournir de voix adaptée pour la langue sélectionnée.",
+    synthesisErrorNoLocalVoice:
+    "Aucune voix locale pour cette langue. Installez le pack de langue dans votre système, ou autorisez les voix cloud dans les Paramètres.",
+    synthesisErrorNoVoice: "Votre navigateur n'a pas de voix pour cette langue.",
+    synthesisErrorGeneric: "Échec de la synthèse vocale.",
     onboardingIntroTitle: "Ce que fait Narrative",
     onboardingIntroDescription:
     "L’application reconnaît la voix localement, traduit le texte et peut lire le résultat à voix haute dans le navigateur.",
@@ -137,6 +141,9 @@ const fr = {
     wipeDataConfirm:
     "Toutes les données enregistrées seront supprimées : préférences, modèles en cache (~1,5 Go) et Service Worker. Continuer ?",
     wipeDataDone: "Toutes les données locales ont été supprimées.",
+    mobileBlockTitle: "Bureau uniquement",
+    mobileBlockBody:
+      "Narrative exécute des modèles IA lourds directement dans le navigateur. Les appareils mobiles n'ont pas assez de mémoire pour fonctionner de manière stable. Veuillez ouvrir Narrative sur un ordinateur portable ou de bureau.",
     updateAvailableTitle: "Une nouvelle version est disponible",
     updateAvailableAction: "Recharger",
     updateAvailableLater: "Plus tard",

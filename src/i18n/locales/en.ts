@@ -53,6 +53,10 @@ const en = {
     "Speech recognition currently runs in Russian, but translation can be sent to multiple languages.",
     noVoiceOutput:
     "Your browser may not provide a matching voice for the selected language.",
+    synthesisErrorNoLocalVoice:
+    "No on-device voice for this language. Install the language pack in your OS, or allow cloud voices in Settings.",
+    synthesisErrorNoVoice: "Your browser has no voice for this language.",
+    synthesisErrorGeneric: "Speech synthesis failed.",
     onboardingIntroTitle: "What Narrative does",
     onboardingIntroDescription:
     "The app recognizes speech locally, translates text, and can read results aloud right in your browser.",
@@ -135,6 +139,9 @@ const en = {
     wipeDataConfirm:
     "This will remove all saved data: preferences, cached models (~1.5 GB), and service worker. Continue?",
     wipeDataDone: "All local data has been removed.",
+    mobileBlockTitle: "Desktop only",
+    mobileBlockBody:
+      "Narrative runs heavy AI models directly in the browser. Mobile devices don't have enough memory for stable operation. Please open Narrative on a laptop or desktop.",
     updateAvailableTitle: "A new version is available",
     updateAvailableAction: "Reload",
     updateAvailableLater: "Later",

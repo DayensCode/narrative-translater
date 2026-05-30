@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation as useI18nTranslation } from "react-i18next";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { Loader } from "./components/Loader";
+import { MobileBlock } from "./components/MobileBlock";
 import { UpdateBanner } from "./components/UpdateBanner";
 
 import { usePWAInstall } from "./hooks/usePWAInstall";
@@ -21,6 +22,14 @@ import { normalizeUiLocale } from "./languages";
 
 const MainPage = lazy(() => import("./pages/MainPage"));
 const SettingsRoute = lazy(() => import("./pages/SettingsRoute"));
+
+function isMobileDevice(): boolean {
+  const ua = navigator.userAgent;
+  if (/Mobi|Android|iPhone|iPod/.test(ua)) return true;
+  // iPad on iOS 13+ reports as MacIntel + touch
+  if (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) return true;
+  return false;
+}
 
 function App() {
   const { t } = useI18nTranslation();
@@ -54,6 +63,8 @@ function App() {
     isSpeaking,
     speak,
     stop: stopSpeaking,
+    error: synthesisErrorCode,
+    clearError: clearSynthesisError,
     localOnly: localTtsOnly,
     setLocalOnly: setLocalTtsOnly,
   } = useSpeechSynthesis();
@@ -92,7 +103,16 @@ function App() {
     }
     clearTranscript();
     clearTranslation();
-  }, [clearTranscript, clearTranslation, t, transcript, partialTranscript, translatedText]);
+    clearSynthesisError();
+  }, [
+    clearTranscript,
+    clearTranslation,
+    clearSynthesisError,
+    t,
+    transcript,
+    partialTranscript,
+    translatedText,
+  ]);
 
   useEffect(() => {
     if (prevSourceLanguageRef.current !== sourceLanguage) {
@@ -136,8 +156,31 @@ function App() {
     description.setAttribute("content", t("seoDescription"));
   }, [t]);
 
+  const synthesisError = useMemo(() => {
+    if (!synthesisErrorCode) return null;
+    if (synthesisErrorCode === "no-local-voice") {
+      return t("synthesisErrorNoLocalVoice", {
+        defaultValue:
+          "No on-device voice for this language. Install the language pack in your OS, or allow cloud voices in Settings.",
+      });
+    }
+    if (synthesisErrorCode === "no-voice-for-language") {
+      return t("synthesisErrorNoVoice", {
+        defaultValue: "Your browser has no voice for this language.",
+      });
+    }
+    return t("synthesisErrorGeneric", {
+      defaultValue: "Speech synthesis failed.",
+    });
+  }, [synthesisErrorCode, t]);
+
   const canClear = Boolean(
-    transcript || partialTranscript || translatedText || error || translationError,
+    transcript ||
+      partialTranscript ||
+      translatedText ||
+      error ||
+      translationError ||
+      synthesisError,
   );
 
   const status = isRecording
@@ -211,6 +254,10 @@ function App() {
   const localizedLoadingStage =
     loadingStageLabelByValue[modelLoadingStage] ?? modelLoadingStage;
 
+  if (isMobileDevice()) {
+    return <MobileBlock />;
+  }
+
   if (isModelLoading) {
     return (
       <Loader
@@ -270,6 +317,7 @@ function App() {
               translationNote={t("translationOnlyFromRussian")}
               error={error}
               translationError={translationError}
+              synthesisError={synthesisError}
               isRecording={isRecording}
               isTranscribing={isTranscribing}
               isTranslating={isTranslating}

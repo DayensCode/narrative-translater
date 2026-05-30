@@ -43,6 +43,7 @@ type MainPageProps = {
   translationNote: string;
   error: string | null;
   translationError: string | null;
+  synthesisError: string | null;
   isRecording: boolean;
   isTranscribing: boolean;
   isTranslating: boolean;
@@ -91,6 +92,7 @@ export default function MainPage({
   translationNote,
   error,
   translationError,
+  synthesisError,
   isRecording,
   isTranscribing,
   isTranslating,
@@ -167,6 +169,7 @@ export default function MainPage({
       />
       {error ? <p className={styles.error}>{error}</p> : null}
       {translationError ? <p className={styles.error}>{translationError}</p> : null}
+      {synthesisError ? <p className={styles.error}>{synthesisError}</p> : null}
       <Controls
         isRecording={isRecording}
         isSpeaking={isSpeaking}

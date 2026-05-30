@@ -20,10 +20,34 @@ function ensureVoiceListener(): void {
   voiceListenerAttached = true;
 }
 
-function pickVoice(
-  lang: string,
-  localOnly: boolean,
-): SpeechSynthesisVoice | undefined {
+/**
+ * `SpeechSynthesisVoice.localService` is the canonical signal, but several
+ * browsers misreport it. Most importantly, Chromium on Windows flags every
+ * voice — including OS-installed Microsoft SAPI engines — as
+ * `localService: false`, which would otherwise trip our `localOnly` guard
+ * and silently refuse playback for users who clearly have a local engine
+ * installed (long-standing crbug.com/634716).
+ *
+ * As a fallback we also recognise vendor prefixes for engines that ship
+ * with the OS and never go to the network: Microsoft on Windows, Apple on
+ * macOS/iOS, and eSpeak on Linux. The "Google …" voices, which are the
+ * cloud ones we explicitly do not want under `localOnly`, are never matched
+ * by these prefixes.
+ */
+function isLikelyLocalVoice(v: SpeechSynthesisVoice): boolean {
+  if (v.localService) return true;
+  const name = v.name.toLowerCase();
+  if (name.startsWith("microsoft ")) return true;
+  if (name.startsWith("apple ") || name.startsWith("com.apple.")) return true;
+  if (name.startsWith("espeak")) return true;
+  return false;
+}
+
+type VoicePick =
+  | { voice: SpeechSynthesisVoice; reason: "local" | "cloud" }
+  | { voice: undefined; reason: "no-local" | "no-voice" };
+
+function pickVoice(lang: string, localOnly: boolean): VoicePick {
   const prefix = lang.split("-")[0].toLowerCase();
   // Prefer on-device voices: some browser voices (e.g. Chrome's "Google …"
   // voices) stream the utterance text to a cloud TTS provider, which
@@ -33,10 +57,11 @@ function pickVoice(
   const matches = voiceCache.voices.filter((v) =>
     v.lang.toLowerCase().startsWith(prefix),
   );
-  const local = matches.find((v) => v.localService);
-  if (local) return local;
-  if (localOnly) return undefined;
-  return matches[0];
+  if (matches.length === 0) return { voice: undefined, reason: "no-voice" };
+  const local = matches.find(isLikelyLocalVoice);
+  if (local) return { voice: local, reason: "local" };
+  if (localOnly) return { voice: undefined, reason: "no-local" };
+  return { voice: matches[0], reason: "cloud" };
 }
 
 const LOCAL_TTS_STORAGE_KEY = "narrative-local-tts-only";
@@ -51,8 +76,14 @@ function readLocalOnlyPreference(): boolean {
   }
 }
 
+export type SynthesisErrorCode =
+  | "no-local-voice"
+  | "no-voice-for-language"
+  | "synthesis-failed";
+
 export function useSpeechSynthesis() {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [error, setError] = useState<SynthesisErrorCode | null>(null);
   const [localOnly, setLocalOnlyState] = useState<boolean>(() =>
     typeof window === "undefined" ? true : readLocalOnlyPreference(),
   );
@@ -89,16 +120,26 @@ export function useSpeechSynthesis() {
       if (!text.trim()) return;
 
       stop();
-      const matchedVoice = pickVoice(lang, localOnly);
-      if (localOnly && !matchedVoice) {
-        // No local voice available — refuse rather than silently fall back
-        // to a cloud voice that would leak the text off-device.
+
+      // Refresh the cache synchronously: in Chrome the very first call to
+      // getVoices() can populate it without ever firing `voiceschanged`, so
+      // a user who clicks Speak fast might otherwise see an empty list.
+      if (voiceCache.voices.length === 0 && "speechSynthesis" in window) {
+        voiceCache.voices = window.speechSynthesis.getVoices();
+      }
+
+      const pick = pickVoice(lang, localOnly);
+      if (!pick.voice) {
+        setError(
+          pick.reason === "no-local" ? "no-local-voice" : "no-voice-for-language",
+        );
         return;
       }
 
+      setError(null);
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
-      if (matchedVoice) utterance.voice = matchedVoice;
+      utterance.voice = pick.voice;
 
       utterance.onend = () => {
         if (utteranceRef.current === utterance) {
@@ -106,10 +147,14 @@ export function useSpeechSynthesis() {
           setIsSpeaking(false);
         }
       };
-      utterance.onerror = () => {
-        if (utteranceRef.current === utterance) {
-          utteranceRef.current = null;
-          setIsSpeaking(false);
+      utterance.onerror = (event) => {
+        if (utteranceRef.current !== utterance) return;
+        utteranceRef.current = null;
+        setIsSpeaking(false);
+        // `interrupted` / `canceled` happen when the user (or our `stop`)
+        // aborts a still-speaking utterance; that is not a failure.
+        if (event.error !== "interrupted" && event.error !== "canceled") {
+          setError("synthesis-failed");
         }
       };
       utteranceRef.current = utterance;
@@ -119,5 +164,7 @@ export function useSpeechSynthesis() {
     [stop, localOnly],
   );
 
-  return { isSpeaking, speak, stop, localOnly, setLocalOnly };
+  const clearError = useCallback(() => setError(null), []);
+
+  return { isSpeaking, speak, stop, error, clearError, localOnly, setLocalOnly };
 }

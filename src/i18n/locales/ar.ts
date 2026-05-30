@@ -52,6 +52,10 @@ const ar = {
     translationOnlyFromRussian:
     "التعرّف على الكلام يعمل حالياً باللغة الروسية، لكن يمكن إرسال الترجمة إلى عدة لغات.",
     noVoiceOutput: "قد لا يوفّر المتصفح صوتاً مناسباً للغة المختارة.",
+    synthesisErrorNoLocalVoice:
+    "لا يوجد صوت محلي لهذه اللغة على جهازك. ثبّت حزمة اللغة في نظام التشغيل، أو اسمح بالأصوات السحابية من الإعدادات.",
+    synthesisErrorNoVoice: "متصفّحك لا يحتوي على صوت لهذه اللغة.",
+    synthesisErrorGeneric: "فشل تشغيل الصوت.",
     onboardingIntroTitle: "ما الذي يقدّمه Narrative",
     onboardingIntroDescription:
     "يستطيع التطبيق التعرّف على الكلام محلياً، وترجمة النص، وقراءة النتيجة صوتياً داخل المتصفح.",
@@ -134,6 +138,9 @@ const ar = {
     wipeDataConfirm:
     "سيتم حذف كل البيانات المحفوظة: التفضيلات، النماذج المخبّأة (~1.5 غيغابايت)، وService Worker. هل تريد المتابعة؟",
     wipeDataDone: "تم حذف جميع البيانات المحلية.",
+    mobileBlockTitle: "للحاسوب فقط",
+    mobileBlockBody:
+      "يُشغّل Narrative نماذج ذكاء اصطناعي ثقيلة مباشرةً في المتصفح. لا تمتلك الأجهزة المحمولة ذاكرة كافية للعمل بشكل مستقر. يرجى فتح Narrative على حاسوب محمول أو مكتبي.",
     updateAvailableTitle: "إصدار جديد متاح",
     updateAvailableAction: "إعادة التحميل",
     updateAvailableLater: "لاحقًا",

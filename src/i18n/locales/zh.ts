@@ -49,6 +49,10 @@ const zh = {
     statusTheme: "当前主题",
     translationOnlyFromRussian: "当前语音识别仅支持俄语，但翻译可输出到多个语言。",
     noVoiceOutput: "浏览器可能无法为所选语言提供合适的语音。",
+    synthesisErrorNoLocalVoice:
+    "系统中没有该语言的本地语音。请在操作系统中安装语言包，或在设置中允许使用云端语音。",
+    synthesisErrorNoVoice: "您的浏览器没有该语言的语音。",
+    synthesisErrorGeneric: "语音合成失败。",
     onboardingIntroTitle: "Narrative 能做什么",
     onboardingIntroDescription:
     "该应用可在本地识别语音、翻译文本，并在浏览器中朗读结果。",
@@ -133,6 +137,9 @@ const zh = {
     wipeDataDone: "所有本地数据已被清除。",
     updateAvailableTitle: "有新版本可用",
     updateAvailableAction: "重新加载",
+    mobileBlockTitle: "仅支持桌面端",
+    mobileBlockBody:
+      "Narrative 直接在浏览器中运行大型 AI 模型。移动设备内存不足，无法稳定运行。请在笔记本或台式电脑上打开 Narrative。",
     updateAvailableLater: "稍后",
     languages: {
     ru: "俄语",

@@ -52,6 +52,10 @@ const hi = {
     translationOnlyFromRussian:
     "अभी स्पीच रिकग्निशन रूसी में चलता है, लेकिन अनुवाद कई भाषाओं में भेजा जा सकता है।",
     noVoiceOutput: "ब्राउज़र चुनी हुई भाषा के लिए उपयुक्त आवाज़ न दे सके।",
+    synthesisErrorNoLocalVoice:
+    "इस भाषा के लिए सिस्टम में कोई स्थानीय आवाज़ नहीं है। OS में भाषा पैक स्थापित करें, या सेटिंग्स में क्लाउड आवाज़ें सक्षम करें।",
+    synthesisErrorNoVoice: "आपके ब्राउज़र में इस भाषा के लिए कोई आवाज़ नहीं है।",
+    synthesisErrorGeneric: "स्पीच प्लेबैक विफल रहा।",
     onboardingIntroTitle: "Narrative क्या करता है",
     onboardingIntroDescription:
     "यह ऐप लोकल रूप से स्पीच पहचानता है, टेक्स्ट का अनुवाद करता है और परिणाम को आवाज़ में पढ़ सकता है।",
@@ -134,6 +138,9 @@ const hi = {
     wipeDataConfirm:
     "सभी सहेजा गया डेटा हटाया जाएगा: प्राथमिकताएँ, कैश्ड मॉडल (~1.5 GB) और Service Worker। जारी रखें?",
     wipeDataDone: "सभी लोकल डेटा हटा दिया गया है।",
+    mobileBlockTitle: "केवल डेस्कटॉप के लिए",
+    mobileBlockBody:
+      "Narrative सीधे ब्राउज़र में भारी AI मॉडल चलाता है। मोबाइल डिवाइस में पर्याप्त मेमोरी नहीं होती। कृपया Narrative को लैपटॉप या डेस्कटॉप पर खोलें।",
     updateAvailableTitle: "नया संस्करण उपलब्ध है",
     updateAvailableAction: "फिर से लोड करें",
     updateAvailableLater: "बाद में",
